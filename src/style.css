@@ -1,0 +1,278 @@
+:root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #333333;
+  background-color: #f5f7fa;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.custom-confirm-dialog {
+  background-color: #ffffff !important;
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+  border: 2px solid #0ea5e9 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+  width: 100% !important;
+  max-width: 500px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.custom-confirm-dialog .custom-confirm-header {
+  font-weight: bold;
+  font-size: 1.3rem;
+  color: #055f84;
+  margin-bottom: 0.5rem;
+}
+
+.custom-confirm-dialog .custom-confirm-icon {
+  font-size: 2rem;
+  color: #f59e0b;
+  margin-right: 0.75rem;
+  vertical-align: middle;
+}
+
+.custom-confirm-dialog .custom-confirm-message {
+  font-size: 1.3rem;
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+
+}
+
+.custom-confirm-dialog .custom-confirm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.custom-confirm-dialog .custom-confirm-footer button:first-child {
+  background-color: #0884c4;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.custom-confirm-dialog .custom-confirm-footer button:first-child:hover {
+  background-color: #056a9d;
+}
+
+.custom-confirm-dialog .custom-confirm-footer button:last-child {
+  background-color: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.custom-confirm-dialog .custom-confirm-footer button:last-child:hover {
+  background-color: #e2e8f0;
+}
+
+.p-toast {
+  width: 300px !important;
+  max-width: 100% !important;
+  background-color: transparent !important;
+  border-radius: 8px !important;
+  box-shadow:
+          0px 4px 8px rgba(0, 0, 0, 0.08),
+          0px 6px 16px rgba(0, 0, 0, 0.05);
+  padding: 0 !important;
+  border: none !important;
+}
+
+.p-toast .p-toast-message {
+  background-clip: padding-box;
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.p-toast .p-toast-message-success {
+  background-color: #d1e7dd;
+  color: #155724;
+  border: 4px solid #badbcc;
+}
+
+.p-toast .p-toast-message-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 4px solid #f5c2c7;
+}
+
+.p-toast .p-toast-message-info {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+  border: 4px solid #bfdbfe;
+}
+
+.p-toast .p-toast-message-icon {
+  font-size: 1.5rem;
+  margin-right: 10px;
+  opacity: 0.8;
+}
+
+.technician-detail-dialog .p-dialog {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.technician-detail-dialog .p-dialog-header {
+  background-color: #007bff;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.3rem;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  padding: 1.2rem 1.5rem;
+}
+
+.technician-detail-dialog .p-dialog-content {
+  background-color: #ffffff;
+  padding: 2.5rem;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.work-order-detail-dialog .p-dialog {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.work-order-detail-dialog .p-dialog-header {
+  background-color: #0884c4;
+  color: #fff;
+  font-weight: bold;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  padding: 1rem;
+}
+
+.work-order-detail-dialog .p-dialog-content {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.company-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.company-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.company-card .p-card-header {
+  background-color: #f2f7fa;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e7eb;
+}
+
+.company-card .p-card-title {
+  padding: 1.5rem 1.5rem 0.5rem;
+  font-size: 1.25rem;
+  color: #34495e;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.company-card .p-card-subtitle {
+  padding: 0 1.5rem 1rem;
+  font-size: 0.95rem;
+  color: #7f8c8d;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.company-card .p-card-content {
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px dashed #ecf0f1;
+  margin-top: 1rem;
+}
+
+.rating-dialog-custom .p-dialog {
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.rating-dialog-custom .p-dialog-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 1.25rem 1.5rem;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.rating-dialog-custom .p-dialog-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #34495e;
+}
+
+.rating-dialog-custom .dialog-content {
+  padding: 1.5rem;
+  text-align: center;
+  background-color: #f2f7fa;
+}
+
+
+.rating-dialog-custom .rating-error-message {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #e74c3c;
+}
+
+.rating-dialog-custom .p-dialog-footer {
+  border-top: 1px solid #e9ecef;
+  padding: 1rem 1.5rem;
+  background-color: #f8f9fa;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+
+#app {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
