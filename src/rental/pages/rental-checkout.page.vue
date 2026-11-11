@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 import RentalPageHeader from '../components/rental-page-header.component.vue';
 import RentalLoadingState from '../components/rental-loading-state.component.vue';
 import RentalEquipmentSummary from '../components/rental-equipment-summary.component.vue';
@@ -30,11 +30,6 @@ export default {
       return this.$route.params.equipmentId;
     }
   },
-  created() {
-    if (this.equipmentId) {
-      this.loadEquipmentData();
-    }
-  },
   watch: {
     // Watch for route changes to reload data
     equipmentId: {
@@ -59,7 +54,7 @@ export default {
         this.equipmentData = equipment;
       } catch (err) {
         console.error('Error loading equipment data:', err);
-        this.error = 'Failed to load equipment data. Please try again.';
+        this.error = this.$t('rental.checkout.loadError');
       } finally {
         this.loading = false;
       }
@@ -79,8 +74,9 @@ export default {
       this.pricingData = pricing;
     },
 
-    handleCheckoutSubmit(requestData) {
-      console.log('Checkout submitted:', requestData);
+    handleCheckoutSubmit() {
+      // the pricing summary already toasted the result; bring the user back to the catalog
+      this.$router.push({ name: 'rental-catalog' });
     },
 
     handleNavigateBack() {
@@ -98,9 +94,9 @@ export default {
   <div class="checkout-page">
     <!-- Page Header Component -->
     <rental-page-header
-        title="Configure Rental"
+        :title="$t('rental.checkout.title')"
         :show-back-button="true"
-        back-text="Back to catalog"
+        :back-text="$t('rental.header.backToCatalog')"
         @navigate-back="handleNavigateBack"
     />
 
@@ -108,17 +104,17 @@ export default {
     <div v-if="equipmentId" class="checkout-content">
       <!-- Loading State -->
       <div v-if="loading" class="loading-overlay">
-        <rental-loading-state message="Loading equipment information..." />
+        <rental-loading-state :message="$t('rental.summary.loading')" />
       </div>
 
       <!-- Error State -->
       <div v-else-if="error" class="error-message">
         <p>{{ error }}</p>
         <button @click="retryLoading" class="retry-button">
-          Try again
+          {{ $t('common.retry') }}
         </button>
         <button @click="handleNavigateBack" class="back-button">
-          Back to catalog
+          {{ $t('rental.header.backToCatalog') }}
         </button>
       </div>
 
@@ -155,9 +151,9 @@ export default {
 
     <!-- Message shown when NO equipmentId -->
     <div v-else class="no-equipment">
-      <p>Specified equipment not found.</p>
+      <p>{{ $t('rental.checkout.notFound') }}</p>
       <button @click="handleNavigateBack" class="back-button">
-        Back to catalog
+        {{ $t('rental.header.backToCatalog') }}
       </button>
     </div>
   </div>
@@ -166,7 +162,7 @@ export default {
 <style scoped>
 .checkout-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, var(--op-surface-muted) 0%, #e9ecef 100%);
 }
 
 .checkout-content {
@@ -239,7 +235,7 @@ export default {
 }
 
 .back-button:hover {
-  background-color: #e1e8ed;
+  background-color: var(--op-border);
 }
 
 /* Responsive Grid */

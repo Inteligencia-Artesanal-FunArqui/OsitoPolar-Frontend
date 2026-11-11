@@ -128,11 +128,11 @@ export default {
   <div class="temperature-control" :class="{ 'disabled': disabled }">
     <div class="temperature-display">
       <div class="current-temperature">
-        <span class="label">Current:</span>
+        <span class="label">{{ $t('equipment.control.current') }}:</span>
         <span class="value">{{ currentTemperature.toFixed(1) }}°C</span>
       </div>
       <div class="set-temperature">
-        <span class="label">Set:</span>
+        <span class="label">{{ $t('equipment.control.set') }}:</span>
         <span class="value" :style="{ color: temperatureColor }">{{ temperatureValue.toFixed(1) }}°C</span>
       </div>
     </div>
@@ -141,6 +141,7 @@ export default {
       <pv-button
           icon="pi pi-minus"
           class="p-button-rounded p-button-secondary"
+          :aria-label="$t('equipment.control.decrease')"
           @click="decreaseTemperature"
           :disabled="disabled || temperatureValue <= sliderRange.min"
       />
@@ -158,13 +159,14 @@ export default {
       <pv-button
           icon="pi pi-plus"
           class="p-button-rounded p-button-secondary"
+          :aria-label="$t('equipment.control.increase')"
           @click="increaseTemperature"
           :disabled="disabled || temperatureValue >= sliderRange.max"
       />
     </div>
 
     <div class="optimal-range">
-      <span>Optimal range: {{ optimalMin.toFixed(1) }}°C - {{ optimalMax.toFixed(1) }}°C</span>
+      <span>{{ $t('equipment.control.optimalRange') }}: {{ optimalMin.toFixed(1) }}°C - {{ optimalMax.toFixed(1) }}°C</span>
     </div>
   </div>
 </template>

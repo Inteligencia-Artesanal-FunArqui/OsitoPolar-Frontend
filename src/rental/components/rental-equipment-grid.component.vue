@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 import RentalEquipmentCard from './rental-equipment-card.component.vue';
 
 export default {
@@ -26,15 +26,13 @@ export default {
 
 <template>
   <div class="equipment-grid-container">
-    <div v-if="loading" class="loading-state">
-      <pv-progress-spinner />
-      <p>{{ $t('rental.catalog.loading') }}</p>
-    </div>
+    <op-loading-state v-if="loading" :label="$t('rental.catalog.loading')" />
 
-    <div v-else-if="equipment.length === 0" class="empty-state">
-      <i class="pi pi-inbox" style="font-size: 3rem; color: #999;"></i>
-      <p>{{ $t('rental.catalog.noEquipment') }}</p>
-    </div>
+    <op-empty-state
+        v-else-if="equipment.length === 0"
+        icon="pi pi-inbox"
+        :title="$t('rental.catalog.noEquipment')"
+        :message="$t('rental.catalog.noEquipmentHint')" />
 
     <div v-else class="equipment-grid">
       <rental-equipment-card

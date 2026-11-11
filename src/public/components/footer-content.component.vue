@@ -1,9 +1,7 @@
 <script>
 /**
  * @component footer
- * @description Footer component displayed at the bottom of the application
- * Contains copyright information, links, and company details
- * Now with full i18n support
+ * @description Footer with brand, quick public links and copyright.
  */
 export default {
   name: "footer-component",
@@ -15,9 +13,8 @@ export default {
   computed: {
     links() {
       return [
-        { label: this.$t('footer.terms'), url: '#' },
-        { label: this.$t('footer.privacy'), url: '#' },
-        { label: this.$t('footer.cookies'), url: '#' }
+        { label: this.$t('nav.about'), to: '/about' },
+        { label: this.$t('nav.contact'), to: '/contact' }
       ]
     }
   }
@@ -25,26 +22,25 @@ export default {
 </script>
 
 <template>
-  <div class="footer-container">
+  <footer class="footer-container">
     <div class="footer-content">
       <div class="footer-copyright">
         &copy; {{ currentYear }} {{ $t('footer.company') }}. {{ $t('footer.rights') }}.
       </div>
-      <div class="footer-links">
-        <a v-for="link in links" :key="link.url" :href="link.url" class="footer-link">
+      <nav class="footer-links">
+        <router-link v-for="link in links" :key="link.to" :to="link.to" class="footer-link">
           {{ link.label }}
-        </a>
-      </div>
+        </router-link>
+      </nav>
     </div>
-  </div>
+  </footer>
 </template>
 
 <style scoped>
 .footer-container {
-  background-color: white;
-  border-top: 1px solid #e0e0e0;
-  padding: 2.5rem 0;
-  margin-top: 2rem;
+  background-color: var(--op-surface);
+  border-top: 1px solid var(--op-border);
+  padding: var(--op-space-6) 0;
 }
 
 .footer-content {
@@ -53,50 +49,36 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 2rem;
+  gap: var(--op-space-4);
+  padding: 0 var(--op-space-6);
 }
 
 .footer-copyright {
-  color: #666;
+  color: var(--op-text-muted);
   font-size: 0.9rem;
 }
 
 .footer-links {
   display: flex;
-  gap: 1.5rem;
+  gap: var(--op-space-5);
 }
 
 .footer-link {
-  color: #0079c2;
+  color: var(--op-brand);
   font-size: 0.9rem;
   text-decoration: none;
-  transition: color 0.2s ease;
 }
 
 .footer-link:hover {
   text-decoration: underline;
-  color: #005a91;
+  color: var(--op-brand-strong);
 }
 
-@media (max-width: 768px) {
-  .footer-container {
-    padding: 2rem 0;
-  }
-
+@media (max-width: 640px) {
   .footer-content {
     flex-direction: column;
-    gap: 1rem;
     text-align: center;
-  }
-
-  .footer-links {
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .footer-link {
-    font-size: 0.85rem;
+    padding: 0 var(--op-space-4);
   }
 }
 </style>

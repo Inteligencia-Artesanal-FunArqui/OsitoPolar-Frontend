@@ -11,7 +11,7 @@ export default {
       </div>
       <div class="content">
         <h3>{{ $t('contact.address') }}</h3>
-        <p>Av. La Marina 123, Lima, Perú</p>
+        <p>{{ $t('contact.addressValue') }}</p>
       </div>
     </div>
 
@@ -34,7 +34,7 @@ export default {
       <div class="content">
         <h3>{{ $t('contact.email') }}</h3>
         <p>
-          <a href="mailto:info@coolfreeze.com" class="contact-link">info@coolfreeze.com</a>
+          <a href="mailto:contacto@coolfreeze.com" class="contact-link">contacto@coolfreeze.com</a>
         </p>
       </div>
     </div>
@@ -45,8 +45,8 @@ export default {
       </div>
       <div class="content">
         <h3>{{ $t('contact.businessHours') }}</h3>
-        <p>{{ $t('contact.mondayToFriday') }}: 9:00 AM - 6:00 PM</p>
-        <p>{{ $t('contact.saturday') }}: 9:00 AM - 1:00 PM</p>
+        <p>{{ $t('contact.mondayToFriday') }}: 9:00 - 18:00</p>
+        <p>{{ $t('contact.saturday') }}: 9:00 - 13:00</p>
       </div>
     </div>
   </div>
@@ -58,7 +58,7 @@ export default {
   flex-direction: column;
   gap: 2rem;
   flex: 1;
-  min-width: 300px;
+  min-width: 0;
 }
 
 .info-item {
@@ -68,7 +68,7 @@ export default {
 }
 
 .icon {
-  background: #0079c2;
+  background: var(--op-brand);
   color: white;
   width: 50px;
   height: 50px;
@@ -97,7 +97,7 @@ export default {
 }
 
 .contact-link {
-  color: #0079c2;
+  color: var(--op-brand);
   text-decoration: none;
   transition: color 0.2s;
 }

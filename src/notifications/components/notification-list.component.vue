@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 import NotificationItem from './notification-item.component.vue';
 
 /**
@@ -38,5 +38,6 @@ export default {
 .notification-list {
   display: flex;
   flex-direction: column;
+  gap: var(--op-space-3);
 }
 </style>

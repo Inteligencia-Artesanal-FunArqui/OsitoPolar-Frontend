@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 /**
  * Import component dependencies
  */
@@ -15,6 +15,7 @@ import { EquipmentService } from "../../equipment/services/equipment.service.js"
 import { TemperatureReading } from "../models/temperature-reading.entity.js";
 import { DailyTemperatureAverage } from "../models/daily-temperature-average.entity.js";
 import httpInstance from "../../shared/http.instance.js";
+import { Equipment } from "../../equipment/models/equipment.entity.js";
 
 /**
  * @component dashboard
@@ -59,7 +60,9 @@ export default {
        * @type {Number}
        * @description ID of currently selected equipment
        */
-      selectedEquipmentId: 1,
+      selectedEquipmentId: null,
+
+      hasError: false,
 
       /**
        * @type {AnalyticsService|null}
@@ -106,13 +109,23 @@ export default {
      */
     loadData() {
       this.loading = true;
+      this.hasError = false;
 
       httpInstance.get('/equipments').then(response => {
-        this.allEquipment = response.data;
-        this.loadEquipmentData(this.selectedEquipmentId);
+        this.allEquipment = response.data.map(item => new Equipment(item));
+        // no hard-coded id: start with the first unit the user actually owns
+        if (!this.allEquipment.some(e => String(e.id) === String(this.selectedEquipmentId))) {
+          this.selectedEquipmentId = this.allEquipment[0]?.id ?? null;
+        }
+        if (this.selectedEquipmentId === null) {
+          this.loading = false;
+          return;
+        }
+        return this.loadEquipmentData(this.selectedEquipmentId);
       }).catch(error => {
-        console.error(' Error loading equipment:', error);
+        console.error('Error loading equipment:', error);
         this.loading = false;
+        this.hasError = true;
       });
     },
 
@@ -167,16 +180,9 @@ export default {
         this.loading = false;
 
       } catch (error) {
+        console.error('Error loading dashboard data:', error);
         this.loading = false;
-
-        if (this.$toast) {
-          this.$toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to load dashboard data. Please try again.',
-            life: 5000
-          });
-        }
+        this.hasError = true;
       }
     },
 
@@ -186,7 +192,6 @@ export default {
      */
     onSelectEquipment(equipmentId) {
       if (this.selectedEquipmentId !== equipmentId) {
-        console.log('🎯 Selecting equipment:', equipmentId);
         this.selectedEquipmentId = equipmentId;
         this.loadEquipmentData(equipmentId);
       }
@@ -202,95 +207,69 @@ export default {
 
 <template>
   <div class="dashboard-container">
-    <h1 class="dashboard-title">Equipment Monitoring Dashboard</h1>
+    <op-page-header :title="$t('dashboard.title')" :subtitle="equipment ? equipment.name : $t('dashboard.subtitle')">
+      <pv-button
+          v-if="equipment"
+          :label="$t('dashboard.fullAnalytics')"
+          icon="pi pi-chart-line"
+          severity="secondary"
+          outlined
+          @click="$router.push({ name: 'equipment-analytics', params: { id: equipment.id } })" />
+    </op-page-header>
 
-    <div class="dashboard-loading" v-if="loading">
-      <pv-progress-spinner />
-      <span>Loading dashboard data...</span>
-    </div>
+    <op-loading-state v-if="loading" :label="$t('dashboard.loading')" />
+    <op-error-state v-else-if="hasError" :message="$t('dashboard.errorLoading')" @retry="loadData" />
+    <op-empty-state
+        v-else-if="allEquipment.length === 0"
+        icon="pi pi-chart-line"
+        :title="$t('dashboard.emptyTitle')"
+        :message="$t('dashboard.emptyMessage')">
+      <pv-button :label="$t('equipment.addButton')" icon="pi pi-plus" @click="$router.push('/equipment/new')" />
+    </op-empty-state>
 
-    <div class="dashboard-content" v-else>
-      <div class="dashboard-grid">
-        <!-- Temperature Gauge -->
-        <div class="dashboard-card">
-          <h2 class="card-title">Current Temperature</h2>
-          <temperature-gauge
-              :value="currentTemperature"
-              :optimal-min="optimalRange.min"
-              :optimal-max="optimalRange.max"
-          />
-        </div>
+    <div class="dashboard-grid" v-else>
+      <section class="op-card">
+        <h2 class="card-title">{{ $t('dashboard.currentTemperature') }}</h2>
+        <temperature-gauge
+            :value="currentTemperature"
+            :optimal-min="optimalRange.min"
+            :optimal-max="optimalRange.max"
+        />
+      </section>
 
-        <!-- Temperature Chart -->
-        <div class="dashboard-card">
-          <h2 class="card-title">Temperature Over Time</h2>
-          <temperature-chart :readings="temperatureReadings" />
-        </div>
+      <section class="op-card">
+        <h2 class="card-title">{{ $t('dashboard.temperatureOverTime') }}</h2>
+        <temperature-chart :readings="temperatureReadings" />
+      </section>
 
-        <!-- Location Map -->
-        <div class="dashboard-card">
-          <h2 class="card-title">Temperature by Location</h2>
-          <location-map
-              :equipment="allEquipment"
-              :selected-id="selectedEquipmentId"
-              @select-equipment="onSelectEquipment"
-          />
-        </div>
+      <section class="op-card">
+        <h2 class="card-title">{{ $t('dashboard.temperatureByLocation') }}</h2>
+        <location-map
+            :equipment="allEquipment"
+            :selected-id="selectedEquipmentId"
+            @select-equipment="onSelectEquipment"
+        />
+      </section>
 
-        <!-- Temperature History -->
-        <div class="dashboard-card">
-          <h2 class="card-title">Temperature History</h2>
-          <temperature-history :daily-averages="dailyAverages" />
-        </div>
-      </div>
+      <section class="op-card">
+        <h2 class="card-title">{{ $t('dashboard.temperatureHistory') }}</h2>
+        <temperature-history :daily-averages="dailyAverages" />
+      </section>
     </div>
   </div>
 </template>
 
 <style scoped>
-.dashboard-container {
-  padding: 1rem;
-}
-
-.dashboard-title {
-  font-size: 1.5rem;
-  color: #333;
-  margin-bottom: 1.5rem;
-}
-
-.dashboard-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.dashboard-card {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: var(--op-space-5);
 }
 
 .card-title {
   font-size: 1rem;
-  color: #666;
-  margin-bottom: 1rem;
-  font-weight: 500;
-}
-
-@media (max-width: 768px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
+  color: var(--op-text-muted);
+  margin-bottom: var(--op-space-4);
+  font-weight: 600;
 }
 </style>

@@ -65,8 +65,8 @@ export default {
             console.error('Error loading equipment:', error);
             this.$toast.add({
               severity: 'error',
-              summary: 'Error',
-              detail: 'Failed to load equipment data. Please try again.',
+              summary: this.$t('common.error'),
+              detail: this.$t('equipment.detail.loadError'),
               life: 5000
             });
             this.loading = false;
@@ -86,12 +86,12 @@ export default {
       savePromise
           .then(() => {
             const message = this.isEditMode
-                ? `${equipmentData.name} has been updated successfully`
-                : `${equipmentData.name} has been added successfully`;
+                ? this.$t('equipment.form.updated', { name: equipmentData.name })
+                : this.$t('equipment.form.created', { name: equipmentData.name });
 
             this.$toast.add({
               severity: 'success',
-              summary: 'Success',
+              summary: this.$t('common.success'),
               detail: message,
               life: 3000
             });
@@ -100,11 +100,10 @@ export default {
           })
           .catch(error => {
             console.error('Error saving equipment:', error);
-            const action = this.isEditMode ? 'update' : 'add';
             this.$toast.add({
               severity: 'error',
-              summary: 'Error',
-              detail: `Failed to ${action} equipment. Please try again.`,
+              summary: this.$t('common.error'),
+              detail: this.isEditMode ? this.$t('equipment.form.updateError') : this.$t('equipment.form.createError'),
               life: 5000
             });
           });
@@ -130,6 +129,11 @@ export default {
 
 <template>
   <div class="equipment-form-page">
+    <op-page-header
+        :title="isEditMode ? $t('equipment.form.editTitle') : $t('equipment.form.addTitle')"
+        :subtitle="$t('equipment.form.subtitle')"
+        back-to="/equipment"
+        :back-label="$t('equipment.backToList')" />
     <equipment-form
         :equipment="equipmentData"
         :is-edit-mode="isEditMode"

@@ -5,6 +5,7 @@
 
 import { createRouter, createWebHistory } from "vue-router";
 import authService from "../iam/services/auth.service.js";
+import i18n from "../i18n.js";
 
 /**
  * @description Lazy-loaded component imports for route configuration
@@ -211,12 +212,15 @@ const router = createRouter({
  * - Dynamic page title updates based on route metadata
  * - Redirect management
  */
-router.beforeEach((to, from, next) => {
-    // Log navigation
-    console.log(`Navigating from ${from.name} to ${to.name}`);
+/** Browser tab title from the translated `routeTitle.<routeName>` key (falls back to the English meta title). */
+export function updateDocumentTitle(route = router.currentRoute.value) {
+    const key = `routeTitle.${String(route.name)}`;
+    const label = i18n.global.te(key) ? i18n.global.t(key) : (route.meta?.title || '');
+    document.title = label ? `OsitoPolar | ${label}` : 'OsitoPolar';
+}
 
-    // Update page title
-    document.title = `OsitoPolar | ${to.meta.title || 'Welcome'}`;
+router.beforeEach((to, from, next) => {
+    updateDocumentTitle(to);
 
     // Check authentication
     const isAuthenticated = authService.isAuthenticated();
@@ -224,7 +228,6 @@ router.beforeEach((to, from, next) => {
 
     // If route requires auth and user is not authenticated
     if (requiresAuth && !isAuthenticated) {
-        console.log('Authentication required, redirecting to sign-in');
         next({
             name: 'sign-in',
             query: { redirect: to.fullPath } // Save intended destination
@@ -232,7 +235,6 @@ router.beforeEach((to, from, next) => {
     }
     // If user is authenticated and trying to access sign-in page
     else if (to.name === 'sign-in' && isAuthenticated) {
-        console.log('User already authenticated, redirecting to dashboard');
         next({ name: 'dashboard' });
     }
     // Otherwise, proceed normally

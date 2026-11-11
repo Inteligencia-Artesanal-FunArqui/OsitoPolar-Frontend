@@ -180,6 +180,12 @@ export class Equipment {
      * Gets equipment status display text
      * @returns {string} Formatted status
      */
+    // backend sends Active|Inactive|Maintenance|OutOfService; older data used active|inactive|maintenance|error
+    get statusToken() {
+        const token = String(this.status ?? '').replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
+        return token === 'out_of_service' ? 'error' : token;
+    }
+
     getStatusDisplay() {
         const statusMap = {
             'active': 'Active',
@@ -187,7 +193,7 @@ export class Equipment {
             'maintenance': 'Under Maintenance',
             'error': 'Error'
         };
-        return statusMap[this.status] || this.status;
+        return statusMap[this.statusToken] || this.status;
     }
 
     /**
@@ -201,7 +207,7 @@ export class Equipment {
             'maintenance': 'status-maintenance',
             'error': 'status-error'
         };
-        return classMap[this.status] || 'status-unknown';
+        return classMap[this.statusToken] || 'status-unknown';
     }
 
     /**
@@ -209,7 +215,7 @@ export class Equipment {
      * @returns {boolean} Whether equipment is working
      */
     isOperational() {
-        return this.status === 'active' && this.isPoweredOn;
+        return this.statusToken === 'active' && this.isPoweredOn;
     }
 
     /**
@@ -218,8 +224,8 @@ export class Equipment {
      */
     needsAttention() {
         return this.getTemperatureStatus() !== 'normal' ||
-            this.status === 'error' ||
-            this.status === 'maintenance';
+            this.statusToken === 'error' ||
+            this.statusToken === 'maintenance';
     }
 
     /**

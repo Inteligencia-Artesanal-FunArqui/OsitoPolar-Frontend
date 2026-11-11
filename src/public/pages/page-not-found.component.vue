@@ -1,8 +1,7 @@
-﻿<script>
+<script>
 /**
  * @component page-not-found
- * @description Error page displayed when a route is not found
- * Provides navigation back to valid application routes
+ * @description 404 page with a way back to a valid route.
  */
 export default {
   name: "page-not-found",
@@ -18,13 +17,16 @@ export default {
 </script>
 
 <template>
-  <div class="w-full">
-    <h1>Page not found</h1>
-    <p>The path {{ unavailableRoute }} is not available.</p>
-    <router-link to="/home">Go to Home</router-link>
+  <div class="not-found">
+    <op-empty-state
+        icon="pi pi-compass"
+        :title="$t('notFound.title')"
+        :message="$t('notFound.message', { path: unavailableRoute })">
+      <pv-button :label="$t('notFound.goHome')" icon="pi pi-home" @click="$router.push('/home')" />
+    </op-empty-state>
   </div>
 </template>
 
 <style scoped>
-
+.not-found { max-width: 640px; margin: var(--op-space-8) auto; }
 </style>

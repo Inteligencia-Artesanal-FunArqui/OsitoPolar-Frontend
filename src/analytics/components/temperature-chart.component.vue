@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 import {TemperatureFormattingService} from "../services/temperature-formatting.service.js";
 
 /**
@@ -32,7 +32,7 @@ export default {
             TemperatureFormattingService.formatTime(reading.timestamp)
         ),
         datasets: [{
-          label: 'Temperature',
+          label: this.$t('dashboard.temperature'),
           data: sortedReadings.map(reading => reading.temperature),
           borderColor: '#2196F3',
           backgroundColor: 'rgba(33, 150, 243, 0.2)',

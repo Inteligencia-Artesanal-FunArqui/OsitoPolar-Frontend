@@ -1,9 +1,38 @@
 :root {
+  /* ---- OsitoPolar design tokens ---- */
+  --op-brand: #0079c2;
+  --op-brand-hover: #0884c4;
+  --op-brand-strong: #055f84;
+  --op-brand-soft: #e6f3fb;
+
+  --op-bg: #f5f7fa;
+  --op-surface: #ffffff;
+  --op-surface-muted: #f8f9fa;
+  --op-border: #e1e8ed;
+  --op-border-strong: #cbd5e1;
+  --op-text: #333333;
+  --op-text-strong: #1f2d3d;
+  --op-text-muted: #64748b;
+
+  --op-success: #28a745; --op-success-soft: #e8f6ec; --op-success-border: #bfe5ca; --op-success-text: #1b6b33;
+  --op-info: #2196f3;    --op-info-soft: #e6f2fd;    --op-info-border: #b9dafa;    --op-info-text: #14558f;
+  --op-warn: #f59e0b;    --op-warn-soft: #fff4dd;    --op-warn-border: #f7dca0;    --op-warn-text: #8a5a00;
+  --op-danger: #dc3545;  --op-danger-soft: #fdecee;  --op-danger-border: #f5c2c7;  --op-danger-text: #a12330;
+
+  --op-space-1: 0.25rem; --op-space-2: 0.5rem; --op-space-3: 0.75rem; --op-space-4: 1rem;
+  --op-space-5: 1.25rem; --op-space-6: 1.5rem; --op-space-8: 2rem; --op-space-10: 2.5rem;
+
+  --op-radius-sm: 6px; --op-radius-md: 10px; --op-radius-lg: 14px; --op-radius-pill: 999px;
+  --op-shadow-sm: 0 1px 3px rgba(15, 40, 70, 0.08);
+  --op-shadow-md: 0 4px 14px rgba(15, 40, 70, 0.10);
+  --op-shadow-lg: 0 10px 30px rgba(15, 40, 70, 0.16);
+  --op-page-max: 1240px;
+
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #333333;
-  background-color: #f5f7fa;
+  color: var(--op-text);
+  background-color: var(--op-bg);
 }
 
 * {
@@ -24,7 +53,7 @@ body {
   background-color: #ffffff !important;
   border-radius: 1rem !important;
   padding: 1.5rem !important;
-  border: 2px solid #0ea5e9 !important;
+  border: 2px solid var(--op-brand-hover) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
   width: 100% !important;
   max-width: 500px !important;
@@ -36,7 +65,7 @@ body {
 .custom-confirm-dialog .custom-confirm-header {
   font-weight: bold;
   font-size: 1.3rem;
-  color: #055f84;
+  color: var(--op-brand-strong);
   margin-bottom: 0.5rem;
 }
 
@@ -63,7 +92,7 @@ body {
 }
 
 .custom-confirm-dialog .custom-confirm-footer button:first-child {
-  background-color: #0884c4;
+  background-color: var(--op-brand-hover);
   color: white;
   border: none;
   padding: 0.5rem 1.25rem;
@@ -73,7 +102,7 @@ body {
 }
 
 .custom-confirm-dialog .custom-confirm-footer button:first-child:hover {
-  background-color: #056a9d;
+  background-color: var(--op-brand-strong);
 }
 
 .custom-confirm-dialog .custom-confirm-footer button:last-child {
@@ -144,7 +173,7 @@ body {
 }
 
 .technician-detail-dialog .p-dialog-header {
-  background-color: #007bff;
+  background-color: var(--op-brand);
   color: #fff;
   font-weight: 700;
   font-size: 1.3rem;
@@ -166,7 +195,7 @@ body {
 }
 
 .work-order-detail-dialog .p-dialog-header {
-  background-color: #0884c4;
+  background-color: var(--op-brand-hover);
   color: #fff;
   font-weight: bold;
   border-top-left-radius: 16px;
@@ -231,7 +260,7 @@ body {
 }
 
 .rating-dialog-custom .p-dialog-header {
-  background-color: #f8f9fa;
+  background-color: var(--op-surface-muted);
   border-bottom: 1px solid #e9ecef;
   padding: 1.25rem 1.5rem;
   border-top-left-radius: 12px;
@@ -261,7 +290,7 @@ body {
 .rating-dialog-custom .p-dialog-footer {
   border-top: 1px solid #e9ecef;
   padding: 1rem 1.5rem;
-  background-color: #f8f9fa;
+  background-color: var(--op-surface-muted);
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
   display: flex;
@@ -275,4 +304,127 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+}
+
+/* ---- shared layout helpers ---- */
+:focus-visible {
+  outline: 2px solid var(--op-brand);
+  outline-offset: 2px;
+}
+
+.op-card {
+  background: var(--op-surface);
+  border: 1px solid var(--op-border);
+  border-radius: var(--op-radius-lg);
+  box-shadow: var(--op-shadow-sm);
+  padding: var(--op-space-5);
+}
+
+/* auto-fit card grid: 1 column on phones, more as space allows */
+.op-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--op-space-5);
+}
+
+.op-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--op-space-3);
+  margin-bottom: var(--op-space-5);
+}
+
+.op-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.p-dialog { max-width: 96vw; }
+
+@media (max-width: 640px) {
+  .p-toast { width: calc(100vw - 2rem) !important; }
+}
+
+/* ---- wizard pages (new service request / new work order) ---- */
+.op-wizard { max-width: 860px; margin: 0 auto; }
+.op-wizard .card {
+  background: var(--op-surface);
+  border: 1px solid var(--op-border);
+  padding: var(--op-space-6);
+  border-radius: var(--op-radius-lg);
+  box-shadow: var(--op-shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--op-space-5);
+}
+.op-wizard .card > div > label:first-child,
+.op-wizard .card > label { display: block; margin-bottom: var(--op-space-1); font-weight: 600; color: var(--op-text-strong); }
+.op-wizard .input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--op-border-strong);
+  border-radius: var(--op-radius-md);
+  font: inherit;
+  background: var(--op-surface);
+  color: var(--op-text);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.op-wizard .input:focus {
+  border-color: var(--op-brand);
+  box-shadow: 0 0 0 3px rgba(0, 121, 194, 0.2);
+  outline: none;
+}
+.op-wizard .radio-group { display: flex; flex-wrap: wrap; gap: var(--op-space-4); margin-top: var(--op-space-2); }
+.op-wizard .radio-group label,
+.op-wizard .checkbox { display: inline-flex; align-items: center; gap: var(--op-space-2); font-weight: 400; margin: 0; }
+.op-wizard .actions { display: flex; justify-content: space-between; gap: var(--op-space-3); margin-top: var(--op-space-2); }
+.op-wizard .btn,
+.op-wizard .btn-outline {
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--op-radius-md);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.op-wizard .btn { background: var(--op-brand); color: #fff; border: 1px solid var(--op-brand); }
+.op-wizard .btn:hover:not(:disabled) { background: var(--op-brand-strong); border-color: var(--op-brand-strong); }
+.op-wizard .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.op-wizard .btn-outline { background: transparent; border: 1px solid var(--op-brand); color: var(--op-brand); }
+.op-wizard .btn-outline:hover { background: var(--op-brand-soft); }
+.op-wizard .flex.justify-end { display: flex; justify-content: flex-end; }
+.op-wizard .info-box { background: var(--op-brand-soft); padding: var(--op-space-4); border-radius: var(--op-radius-md); }
+.op-wizard .info-box h2 { font-size: 1rem; margin-bottom: var(--op-space-2); color: var(--op-brand-strong); }
+.op-wizard .info-box ul { list-style: none; display: grid; gap: var(--op-space-1); font-size: 0.92rem; }
+.op-wizard .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--op-space-2); }
+
+.op-wizard .step-indicator { display: flex; align-items: flex-start; margin: 0 0 var(--op-space-6); }
+.op-wizard .step { display: flex; flex-direction: column; align-items: center; position: relative; flex: 1; text-align: center; }
+.op-wizard .step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: calc(50% + 22px);
+  width: calc(100% - 44px);
+  height: 2px;
+  background-color: var(--op-border-strong);
+}
+.op-wizard .step.completed:not(:last-child)::after { background-color: var(--op-brand); }
+.op-wizard .circle {
+  width: 32px; height: 32px; border-radius: 50%;
+  background-color: var(--op-border-strong); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; margin-bottom: var(--op-space-1);
+  transition: background-color 0.2s;
+}
+.op-wizard .step.active .circle,
+.op-wizard .step.completed .circle { background-color: var(--op-brand); }
+.op-wizard .step .label { font-size: 0.85rem; font-weight: 500; color: var(--op-text-muted); }
+.op-wizard .step.active .label { color: var(--op-brand); font-weight: 600; }
+
+@media (max-width: 520px) {
+  .op-wizard .card { padding: var(--op-space-4); }
+  .op-wizard .actions { flex-direction: column-reverse; }
+  .op-wizard .actions .btn, .op-wizard .actions .btn-outline { width: 100%; }
 }

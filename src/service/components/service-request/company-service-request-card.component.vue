@@ -1,7 +1,6 @@
 <script>
 import { ServiceRequestService } from '../../services/service-request.service';
-import { TechnicianService } from "../../../field-operations/services/technician.service.js";
-import { Technician } from "../../../field-operations/models/technician.entity.js";
+import { formatDateTime } from "../../../shared/format.js";
 
 export default {
   name: 'CompanyServiceRequestCard',
@@ -21,21 +20,18 @@ export default {
   data() {
     return {
       serviceRequestService: new ServiceRequestService(),
-      technicianService: new TechnicianService(),
-      selectedTechnicianId: null,
+            selectedTechnicianId: null,
       showAssignDialog: false
     };
   },
+  computed: {
+    availableTechnicians() {
+      return this.allTechnicians.filter(t => String(t.availability || '').toLowerCase() !== 'on leave');
+    }
+  },
   methods: {
     formatDate(date) {
-      if (!date) return this.$t('service.notScheduled');
-      return new Date(date).toLocaleString('es-PE', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      return formatDateTime(date, this.$i18n.locale) || this.$t('service.notScheduled');
     },
     async acceptRequest() {
       this.showAssignDialog = true;
@@ -114,7 +110,7 @@ export default {
         rejectLabel: this.$t('common.no'),
         accept: async () => {
           try {
-            await this.serviceRequestService.updateStatus(this.request.id, 4); // 4 = Resolved
+            await this.serviceRequestService.updateStatus(this.request.id, 'resolved');
             this.$toast.add({
               severity: 'success',
               summary: this.$t('common.success'),
@@ -142,15 +138,6 @@ export default {
       return technician ? technician.name : this.$t('service.notAssigned');
     }
   },
-  async created() {
-    if (this.allTechnicians.length === 0) {
-      try {
-        const response = await this.technicianService.getAll();
-      } catch (error) {
-        console.error('Error loading technicians:', error);
-      }
-    }
-  }
 };
 </script>
 
@@ -158,10 +145,8 @@ export default {
   <pv-card class="request-card company-card">
     <template #header>
       <div class="card-header-content">
-        <div class="request-id">#{{ request.orderNumber || request.id.substring(0, 8) }}</div>
-        <div :class="['status-badge', request.getStatusBadgeClass()]">
-          {{ $t(`service.status.${request.status}`) }}
-        </div>
+        <div class="request-id">#{{ request.orderNumber || String(request.id).substring(0, 8) }}</div>
+        <op-status-badge kind="requestStatus" :value="request.status" />
       </div>
     </template>
 
@@ -189,37 +174,37 @@ export default {
         <div class="detail-item">
           <i class="pi pi-list"></i>
           <strong>{{ $t('service.serviceType') }}:</strong>
-          <span>{{ request.serviceType }}</span>
+          <op-status-badge kind="serviceType" :value="request.serviceType" />
         </div>
         <div class="detail-item">
           <i class="pi pi-tag"></i>
           <strong>{{ $t('service.priority') }}:</strong>
-          <span>{{ request.priority }}</span>
+          <op-status-badge kind="priority" :value="request.priority" />
         </div>
         <div class="detail-item">
           <i class="pi pi-exclamation-circle"></i>
           <strong>{{ $t('service.urgency') }}:</strong>
-          <span>{{ request.urgency }}</span>
+          <op-status-badge kind="urgency" :value="request.urgency" />
         </div>
         <div class="detail-item full-width">
           <i class="pi pi-comment"></i>
           <strong>{{ $t('service.description') }}:</strong>
           <span>{{ request.description }}</span>
         </div>
-        <div class="detail-item full-width" v-if="request.scheduledDate && !request.asap">
+        <div class="detail-item full-width" v-if="request.scheduledDate && !request.isEmergency">
           <i class="pi pi-hourglass"></i>
           <strong>{{ $t('service.scheduledFor') }}:</strong>
           <span>{{ formatDate(request.scheduledDate) }} ({{ request.timeSlot || '-' }})</span>
         </div>
-        <div class="detail-item full-width" v-if="request.technicianId">
+        <div class="detail-item full-width" v-if="request.assignedTechnicianId">
           <i class="pi pi-user"></i>
           <strong>{{ $t('service.technician') }}:</strong>
-          <span>{{ getTechnicianName(request.technicianId) }}</span>
+          <span>{{ getTechnicianName(request.assignedTechnicianId) }}</span>
         </div>
-        <div class="detail-item full-width" v-if="request.status === 'completed' && request.rating">
+        <div class="detail-item full-width" v-if="request.customerFeedbackRating">
           <i class="pi pi-star-fill" style="color: gold;"></i>
           <strong>{{ $t('client.rating.yourRating') }}:</strong>
-          <span>{{ request.rating }} / 5</span>
+          <span>{{ request.customerFeedbackRating }} / 5</span>
         </div>
       </div>
     </template>
@@ -275,10 +260,11 @@ export default {
       <pv-dropdown
           id="technician-select"
           v-model="selectedTechnicianId"
-          :options="allTechnicians"
+          :options="availableTechnicians"
           optionLabel="name"
           optionValue="id"
           :placeholder="$t('company.serviceRequests.selectTechnicianPlaceholder')"
+          :emptyMessage="$t('technicians.noTechnicians')"
       />
     </div>
     <template #footer>
@@ -287,8 +273,6 @@ export default {
     </template>
   </pv-dialog>
 
-  <pv-confirm-dialog />
-  <pv-toast />
 </template>
 
 <style scoped>
@@ -296,27 +280,12 @@ export default {
 .request-id {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #055f84;
+  color: var(--op-brand-strong);
 }
 
-.status-badge {
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-weight: bold;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  color: white;
-}
-
-.status-pending { background-color: #f39c12; }
-.status-accepted { background-color: #1abc9c; }
-.status-in-progress { background-color: #3498db; }
-.status-resolved { background-color: #2ecc71; }
-.status-rejected { background-color: #e74c3c; }
-.status-completed { background-color: #50bb0e; }
 
 .equipment-info i, .location-info i {
-  color: #0884c4;
+  color: var(--op-brand-hover);
   font-size: 1.1rem;
 }
 
@@ -368,19 +337,19 @@ export default {
 }
 
 .p-button-success {
-  background-color: #28a745;
-  border-color: #28a745;
+  background-color: var(--op-success);
+  border-color: var(--op-success);
 }
 .p-button-danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
+  background-color: var(--op-danger);
+  border-color: var(--op-danger);
 }
 .p-button-info {
   background-color: #17a2b8;
   border-color: #17a2b8;
 }
 .p-button-text {
-  color: #0884c4;
+  color: var(--op-brand-hover);
 }
 
 .status-message {

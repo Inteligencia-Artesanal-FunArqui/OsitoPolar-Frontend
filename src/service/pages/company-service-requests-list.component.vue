@@ -39,8 +39,9 @@ export default {
           this.technicianService.getAll()
         ]);
 
-        this.serviceRequests = this.serviceRequestService.mapServiceRequests(requestsResponse.data);
-        this.equipmentList = equipmentResponse.data;
+        this.serviceRequests = this.serviceRequestService.mapServiceRequests(requestsResponse.data)
+            .sort((a, b) => String(b.requestTime).localeCompare(String(a.requestTime))); // newest first
+        this.equipmentList = equipmentResponse; // already Equipment[] (no axios wrapper)
         this.technicians = this.technicianService.mapTechnicians(techniciansResponse.data);
 
         this.loading = false;
@@ -53,13 +54,13 @@ export default {
     },
     getEquipmentDisplay(equipmentId) {
       const match = this.equipmentList.find(eq => String(eq.id) === String(equipmentId));
-      return match ? `${match.name} (${match.code || 'No code'})` : `Equipment ID: ${equipmentId}`;
+      return match ? `${match.name} (${match.code || this.$t('common.noCode')})` : `${this.$t('equipment.equipmentId')}: ${equipmentId}`;
     },
     viewRequestDetail(request) {
       this.selectedRequest = request;
       const equipment = this.equipmentList.find(e => String(e.id) === String(request.equipmentId));
-      this.selectedEquipmentDisplay = equipment ? `${equipment.name} (${equipment.code || 'No code'})` : `Equipment ID: ${request.equipmentId}`;
-      this.selectedLocationDisplay = equipment?.location?.name || "Not specified";
+      this.selectedEquipmentDisplay = this.getEquipmentDisplay(request.equipmentId);
+      this.selectedLocationDisplay = equipment?.location?.name || this.$t('common.notSpecified');
       this.showDetailModal = true;
     }
   },
@@ -74,19 +75,15 @@ export default {
 
 <template>
   <div class="company-service-request-list">
-    <div class="page-header">
-      <h1>{{ $t('service.title') }}</h1>
-    </div>
+    <op-page-header :title="$t('service.title')" :subtitle="$t('company.serviceRequests.subtitle')" />
 
-    <div class="loading" v-if="loading">
-      <pv-progress-spinner />
-      <p>{{ $t('service.loading') }}</p>
-    </div>
-
-    <div class="error" v-else-if="hasError">
-      <p>{{ errorMessage }}</p>
-      <pv-button :label="$t('common.retry')" @click="loadRequestsAndTechnicians" />
-    </div>
+    <op-loading-state v-if="loading" :label="$t('service.loading')" />
+    <op-error-state v-else-if="hasError" :message="errorMessage" @retry="loadRequestsAndTechnicians" />
+    <op-empty-state
+        v-else-if="serviceRequests.length === 0"
+        icon="pi pi-inbox"
+        :title="$t('serviceRequests.noRequests')"
+        :message="$t('company.serviceRequests.emptyMessage')" />
 
     <div class="request-grid" v-else>
       <CompanyServiceRequestCard
@@ -94,12 +91,11 @@ export default {
           :key="req.id"
           :request="req"
           :equipmentDisplay="getEquipmentDisplay(req.equipmentId)"
-          :locationDisplay="equipmentList.find(e => e.id === req.equipmentId)?.location?.name || $t('common.notSpecified')"
+          :locationDisplay="equipmentList.find(e => String(e.id) === String(req.equipmentId))?.location?.name || $t('common.notSpecified')"
           :allTechnicians="technicians"
           @request-updated="loadRequestsAndTechnicians"
           @view-detail="viewRequestDetail"
       />
-      <p v-if="serviceRequests.length === 0">{{ $t('serviceRequests.noRequests') }}</p>
     </div>
 
     <ServiceRequestDetailModal
@@ -113,29 +109,10 @@ export default {
 </template>
 
 <style scoped>
-.company-service-request-list {
-  padding: 1rem;
-}
-
-.page-header {
-  margin-bottom: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.loading,
-.error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
 .request-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: var(--op-space-5);
+  align-items: start;
 }
 </style>

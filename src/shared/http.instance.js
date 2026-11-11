@@ -1,5 +1,15 @@
-﻿import axios from 'axios';
+import axios from 'axios';
+import { createDemoAdapter, resetDemoState } from '../demo/mock-api.mjs';
 import authService from "../iam/services/auth.service.js";
+
+const demoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+let demoStorage;
+if (demoMode) { try { demoStorage = window.localStorage; } catch { /* Use memory when storage is blocked. */ } }
+
+// demo helper: run ositopolarDemo.reset() in the browser console to restore the seed data
+if (demoMode && typeof window !== 'undefined') {
+    window.ositopolarDemo = { reset() { resetDemoState(demoStorage); window.location.reload(); } };
+}
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 const httpInstance = axios.create({
@@ -8,6 +18,7 @@ const httpInstance = axios.create({
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     },
+    ...(demoMode ? { adapter: createDemoAdapter({ storage: demoStorage }) } : {}),
     timeout: 10000
 });
 

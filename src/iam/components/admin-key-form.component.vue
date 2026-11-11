@@ -34,9 +34,9 @@ export default {
 <template>
   <form @submit.prevent="handleSubmit" class="admin-key-form">
     <div class="text-center mb-3">
-      <i class="pi pi-shield" style="font-size: 3rem; color: #0079c2;"></i>
-      <h3>Administrator Access</h3>
-      <p class="text-secondary">Enter the admin key to create users</p>
+      <i class="pi pi-shield" style="font-size: 3rem; color: var(--op-brand);"></i>
+      <h3>{{ $t('auth.adminTitle') }}</h3>
+      <p class="text-secondary">{{ $t('auth.adminSubtitle') }}</p>
     </div>
 
     <div class="field">
@@ -46,20 +46,20 @@ export default {
             v-model="adminKey"
             type="password"
             class="w-full" />
-        <label for="adminKey">Admin Key</label>
+        <label for="adminKey">{{ $t('auth.adminKey') }}</label>
       </pv-float-label>
     </div>
 
     <pv-button
         type="submit"
-        label="Validate Key"
+        :label="$t('auth.validateKey')"
         icon="pi pi-check"
         :loading="loading"
         class="w-full mb-2" />
 
     <pv-button
         type="button"
-        label="Back to Sign In"
+        :label="$t('auth.backToSignIn')"
         icon="pi pi-arrow-left"
         class="p-button-text w-full"
         @click="handleBack" />

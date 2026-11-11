@@ -1,4 +1,7 @@
 <script>
+const languageStorageKey = import.meta.env.VITE_DEMO_MODE === 'true'
+    ? 'ositopolar-vue-demo-language'
+    : 'user-language';
 export default {
   name: "language-switcher",
   computed: {
@@ -13,15 +16,15 @@ export default {
     toggleLanguage() {
       const newLang = this.currentLanguageCode === 'en' ? 'es' : 'en';
       this.$i18n.locale = newLang;
-      localStorage.setItem('user-language', newLang);
+      localStorage.setItem(languageStorageKey, newLang);
     }
   },
   mounted() {
-    const savedLang = localStorage.getItem('user-language');
+    const savedLang = localStorage.getItem(languageStorageKey);
     if (savedLang && ['en', 'es'].includes(savedLang)) {
       this.$i18n.locale = savedLang;
     } else if (!this.$i18n.locale) {
-      this.$i18n.locale = 'en';
+      this.$i18n.locale = 'es';
     }
   }
 }
@@ -57,7 +60,7 @@ export default {
 }
 
 .language-toggle:hover {
-  border-color: #0079c2;
+  border-color: var(--op-brand);
   background: #f0f9ff;
   transform: translateY(-1px);
 }
@@ -69,7 +72,7 @@ export default {
 .language-code {
   font-size: 14px;
   font-weight: 700;
-  color: #0079c2;
+  color: var(--op-brand);
   letter-spacing: 0.5px;
   position: relative;
   z-index: 2;
@@ -96,8 +99,8 @@ export default {
 
 
 .language-toggle.is-spanish {
-  background: #0079c2;
-  border-color: #0079c2;
+  background: var(--op-brand);
+  border-color: var(--op-brand);
 }
 
 .language-toggle.is-spanish .language-code {

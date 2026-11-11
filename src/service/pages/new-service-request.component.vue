@@ -1,5 +1,4 @@
-<script lang="ts">
-import { useRouter } from 'vue-router';
+<script>
 import { EquipmentService } from '../../equipment/services/equipment.service';
 import { ServiceRequestService } from '../services/service-request.service';
 
@@ -8,7 +7,6 @@ export default {
   data() {
     return {
       currentStep: 1,
-      router: useRouter(),
       formData: {
         equipmentId: '',
         serviceType: '',
@@ -26,6 +24,9 @@ export default {
     };
   },
   computed: {
+    serviceTypeLabel() {
+      return this.$t(`badge.serviceType.${{ preventive: 'preventive_maintenance', corrective: 'corrective_maintenance' }[this.formData.serviceType] || this.formData.serviceType}`);
+    },
     timeSlots() {
       return [
         { id: 1, time: '08:00 - 10:00', available: true },
@@ -37,6 +38,10 @@ export default {
     }
   },
   methods: {
+    typeLabel(type) {
+      const key = `equipment.types.${String(type || '').replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase()}`;
+      return this.$te(key) ? this.$t(key) : (type || '-');
+    },
     // Convert frontend values to C# enum string names
     getServiceTypeString(serviceType) {
       const mapping = {
@@ -87,7 +92,7 @@ export default {
           try {
 
             const payload = {
-              title: `${this.formData.serviceType} - ${this.formData.description.substring(0, 40)}`,
+              title: `${this.serviceTypeLabel} - ${this.formData.description.substring(0, 40)}`,
               description: this.formData.description,
               issueDetails: this.formData.description,
               clientId: 1,
@@ -112,20 +117,18 @@ export default {
               life: 3000
             });
 
-            this.router.push('/service-requests');
+            this.$router.push('/service-requests');
           } catch (error) {
-            console.error('❌ Error submitting:', error);
+            console.error('Error submitting:', error);
 
             if (error.response) {
-              console.error('📋 Error Response Status:', error.response.status);
-              console.error('📋 Error Response Data:', error.response.data);
-
+                            
               if (error.response.data.errors) {
                 console.error('🔍 Validation Errors:', JSON.stringify(error.response.data.errors, null, 2));
 
                 // Display specific validation errors to user
                 const errors = error.response.data.errors;
-                let errorMessage = 'Validation errors occurred:';
+                let errorMessage = this.$t('service.form.validationErrors');
 
                 Object.keys(errors).forEach(field => {
                   errors[field].forEach(message => {
@@ -135,26 +138,25 @@ export default {
 
                 this.$toast.add({
                   severity: 'error',
-                  summary: 'Validation Error',
+                  summary: this.$t('service.form.validationTitle'),
                   detail: errorMessage,
                   life: 5000
                 });
               } else {
                 this.$toast.add({
                   severity: 'error',
-                  summary: 'Submission failed',
-                  detail: error.response.data.detail || 'An error occurred while sending the request.',
+                  summary: this.$t('common.submissionFailed'),
+                  detail: error.response.data.message || error.response.data.detail || this.$t('service.form.errorMessage'),
                   life: 3000
                 });
               }
 
-              console.error('📋 Error Response Headers:', error.response.headers);
-            } else {
+                          } else {
               // Network or other error
               this.$toast.add({
                 severity: 'error',
-                summary: 'Network Error',
-                detail: 'Could not connect to the server. Please check your connection.',
+                summary: this.$t('common.networkError'),
+                detail: this.$t('common.networkErrorDetail'),
                 life: 3000
               });
             }
@@ -177,7 +179,7 @@ export default {
           this.equipments = equipments;
         })
         .catch(error => {
-          console.error('❌ Error loading equipment:', error);
+          console.error('Error loading equipment:', error);
           this.$toast.add({
             severity: 'error',
             summary: this.$t('service.error'),
@@ -192,12 +194,12 @@ export default {
 
 
 <template>
-  <div class="container">
-    <RouterLink to="/service-requests" class="link-back">
-      {{ $t('service.backToRequests') }}
-    </RouterLink>
-
-    <h1 class="title">{{ $t('service.newServiceRequest') }}</h1>
+  <div class="op-wizard">
+    <op-page-header
+        :title="$t('service.newServiceRequest')"
+        :subtitle="$t('service.form.subtitle')"
+        back-to="/service-requests"
+        :back-label="$t('service.backToRequests')" />
     <div class="step-indicator mb-8">
       <div
           v-for="(step, index) in [$t('service.steps.equipment'), $t('service.steps.scheduling'), $t('service.steps.confirmation')]"
@@ -213,14 +215,13 @@ export default {
       </div>
     </div>
 
-    <!-- ✅ STEP 1: Equipment and Service Details -->
+    <!-- STEP 1: equipment and service details -->
     <div v-if="currentStep === 1" class="card">
-      <!-- ✅ AGREGAR: Equipment Selection (FALTABA) -->
       <div>
         <label>{{ $t('service.form.selectEquipment') }}</label>
         <select v-model="formData.equipmentId" class="input">
           <option disabled value="">{{ $t('service.form.selectEquipmentPlaceholder') }}</option>
-          <option v-for="e in equipments" :key="e.id" :value="e.id.toString()">
+          <option v-for="e in equipments" :key="e.id" :value="String(e.id)">
             {{ e.name }} - {{ e.location?.name || $t('service.notSpecified') }}
           </option>
         </select>
@@ -229,18 +230,17 @@ export default {
       <!-- Equipment Info Box (solo si hay equipo seleccionado) -->
       <div v-if="formData.equipmentId" class="info-box">
         <div
-            v-for="e in equipments.filter(e => e.id.toString() === formData.equipmentId)"
+            v-for="e in equipments.filter(e => String(e.id) === String(formData.equipmentId))"
             :key="e.id"
-            class="grid grid-cols-2 gap-2"
+            class="info-grid"
         >
           <div><strong>{{ $t('equipment.name') }}:</strong> {{ e.name }}</div>
           <div><strong>{{ $t('service.location') }}:</strong> {{ e.location?.name || $t('service.notSpecified') }}</div>
-          <div><strong>{{ $t('equipment.type') }}:</strong> {{ $t(`equipment.types.${e.type}`) }}</div>
-          <div><strong>{{ $t('equipment.status') }}:</strong> {{ $t(`equipment.status.${e.getTemperatureStatus()}`) }}</div>
+          <div><strong>{{ $t('equipment.type') }}:</strong> {{ typeLabel(e.type) }}</div>
+          <div><strong>{{ $t('equipment.statusLabel') }}:</strong> <op-status-badge kind="temperature" :value="e.getTemperatureStatus()" /></div>
         </div>
       </div>
 
-      <!-- ✅ CORREGIR: Solo UN select de Service Type -->
       <div>
         <label>{{ $t('service.form.serviceType') }}</label>
         <select v-model="formData.serviceType" class="input">
@@ -320,7 +320,7 @@ export default {
       </div>
     </div>
 
-    <!-- ✅ STEP 3: Confirmation -->
+    <!-- STEP 3: confirmation -->
     <div v-if="currentStep === 3" class="card">
       <label>{{ $t('service.form.serviceAddress') }}</label>
       <textarea
@@ -333,9 +333,9 @@ export default {
       <div class="info-box">
         <h2 class="text-primary font-semibold mb-2">{{ $t('service.form.requestSummary') }}</h2>
         <ul class="space-y-1 text-gray-700 text-sm">
-          <li><strong>{{ $t('service.equipment') }}:</strong> {{ equipments.find(e => e.id.toString() === formData.equipmentId)?.name || '-' }}</li>
-          <li><strong>{{ $t('service.serviceType') }}:</strong> {{ $t(`service.form.${formData.serviceType}`) }}</li>
-          <li><strong>{{ $t('service.urgency') }}:</strong> {{ $t(`service.form.${formData.urgency}`) }}</li>
+          <li><strong>{{ $t('service.equipment') }}:</strong> {{ equipments.find(e => String(e.id) === String(formData.equipmentId))?.name || '-' }}</li>
+          <li><strong>{{ $t('service.serviceType') }}:</strong> {{ serviceTypeLabel }}</li>
+          <li><strong>{{ $t('service.urgency') }}:</strong> {{ $t(`badge.urgency.${formData.urgency}`) }}</li>
           <li><strong>{{ $t('service.description') }}:</strong> {{ formData.description }}</li>
           <li><strong>{{ $t('service.form.immediateAttention') }}</strong> {{ formData.asap ? $t('service.yes') : $t('service.no') }}</li>
           <li v-if="!formData.asap"><strong>{{ $t('service.form.scheduledFor') }}</strong> {{ formData.date }}<br /><strong>{{ $t('service.timeSlot') }}:</strong> {{ formData.timeSlot }}</li>
@@ -349,188 +349,4 @@ export default {
       </div>
     </div>
   </div>
-  <pv-confirm-dialog
-      :pt="{
-     root: { class: 'custom-confirm-dialog' },
-     header: { class: 'custom-confirm-header' },
-    message: { class: 'custom-confirm-message' },
-    icon: { class: 'custom-confirm-icon' },
-    footer: { class: 'custom-confirm-footer' }
-  }"
-  />
-  <pv-toast />
 </template>
-
-<style scoped>
-.container {
-  max-width: 768px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-  background-color: #f0f9ff;
-  min-height: 100vh;
-}
-
-.title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #055f84;
-  margin-bottom: 1.5rem;
-}
-
-.link-back {
-  display: inline-block;
-  color: #0884c4;
-  margin-bottom: 1rem;
-  font-weight: 500;
-}
-
-.card {
-  background: #ffffff;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: box-shadow 0.3s, border-color 0.3s;
-}
-
-.input:focus {
-  border-color: #0884c4;
-  box-shadow: 0 0 0 3px rgba(8, 132, 196, 0.25);
-  outline: none;
-}
-
-.radio-group {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-  color: #374151;
-}
-
-.checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  color: #374151;
-}
-
-.actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1rem;
-}
-
-.btn {
-  background-color: #0884c4;
-  color: white;
-  padding: 0.5rem 1.25rem;
-  border: none;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.btn:hover:not(:disabled) {
-  background-color: #056a9d;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-outline {
-  background-color: transparent;
-  border: 1px solid #0884c4;
-  color: #0884c4;
-  padding: 0.5rem 1.25rem;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  transition: all 0.3s;
-}
-
-.btn-outline:hover {
-  background-color: #e0f3fb;
-}
-
-.info-box {
-  background-color: #e6f6fd;
-  padding: 1rem;
-  border-radius: 0.75rem;
-}
-
-.step-indicator {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  margin-bottom: 2rem;
-  position: relative;
-}
-
-.step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  flex: 1;
-  text-align: center;
-  z-index: 1;
-}
-
-.step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: 35px;
-  right: -50%;
-  width: 100%;
-  height: 2px;
-  background-color: #d1d5db;
-  z-index: 0;
-}
-
-.step.completed:not(:last-child)::after {
-  background-color: #0884c4;
-}
-
-.circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #d1d5db;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  transition: background-color 0.3s;
-}
-
-.step.active .circle {
-  background-color: #0884c4;
-}
-
-.step.completed .circle {
-  background-color: #0884c4;
-}
-
-.label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #4b5563;
-}
-
-
-</style>

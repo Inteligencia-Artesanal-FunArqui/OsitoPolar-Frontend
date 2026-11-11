@@ -1,5 +1,6 @@
 ﻿<script>
 import HomeDashboardSummary from '../components/home-dashboard-summary.component.vue';
+import authService from '../../iam/services/auth.service.js';
 
 /**
  * @component home
@@ -8,9 +9,14 @@ import HomeDashboardSummary from '../components/home-dashboard-summary.component
  */
 export default {
   name: "home",
-  title: "Home",
   components: {
     HomeDashboardSummary
+  },
+  computed: {
+    // the summary calls protected endpoints, so anonymous visitors get a sign-in call to action instead
+    isAuthenticated() {
+      return authService.isAuthenticated();
+    }
   }
 }
 </script>
@@ -20,45 +26,55 @@ export default {
     <!-- Hero Section -->
     <div class="hero-section">
       <div class="hero-content">
-        <h1 class="hero-title">{{ $t('home.welcome') || 'Bienvenido a OsitoPolar' }}</h1>
+        <h1 class="hero-title">{{ $t('home.welcome') }}</h1>
         <p class="hero-subtitle">
-          {{ $t('home.subtitle') || 'Gestión inteligente de equipos de refrigeración' }}
+          {{ $t('home.subtitle') }}
         </p>
+        <div class="hero-actions">
+          <template v-if="isAuthenticated">
+            <pv-button :label="$t('nav.dashboard')" icon="pi pi-chart-line" severity="secondary" @click="$router.push('/dashboard')" />
+            <pv-button :label="$t('nav.equipment')" icon="pi pi-box" severity="secondary" @click="$router.push('/equipment')" />
+          </template>
+          <template v-else>
+            <pv-button :label="$t('nav.signIn')" icon="pi pi-sign-in" severity="secondary" @click="$router.push('/sign-in')" />
+            <pv-button :label="$t('nav.contact')" icon="pi pi-envelope" severity="secondary" @click="$router.push('/contact')" />
+          </template>
+        </div>
       </div>
     </div>
 
     <!-- Dashboard Summary -->
-    <div class="summary-section">
+    <div class="summary-section" v-if="isAuthenticated">
       <home-dashboard-summary />
     </div>
 
     <!-- Features Section -->
     <div class="features-section">
       <div class="features-container">
-        <h2 class="features-title">{{ $t('home.features.title') || 'Monitorea tus Equipos' }}</h2>
+        <h2 class="features-title">{{ $t('home.features.title') }}</h2>
         <div class="features-grid">
           <div class="feature-card">
             <div class="feature-icon">
               <i class="pi pi-chart-line"></i>
             </div>
-            <h3>{{ $t('home.features.monitoring') || 'Monitoreo en Tiempo Real' }}</h3>
-            <p>{{ $t('home.features.monitoringDesc') || 'Controla temperatura, consumo energético y recibe alertas instantáneas.' }}</p>
+            <h3>{{ $t('home.features.monitoring') }}</h3>
+            <p>{{ $t('home.features.monitoringDesc') }}</p>
           </div>
 
           <div class="feature-card">
             <div class="feature-icon">
               <i class="pi pi-bell"></i>
             </div>
-            <h3>{{ $t('home.features.alerts') || 'Alertas Inteligentes' }}</h3>
-            <p>{{ $t('home.features.alertsDesc') || 'Notificaciones automáticas ante cualquier anomalía en tus equipos.' }}</p>
+            <h3>{{ $t('home.features.alerts') }}</h3>
+            <p>{{ $t('home.features.alertsDesc') }}</p>
           </div>
 
           <div class="feature-card">
             <div class="feature-icon">
               <i class="pi pi-cog"></i>
             </div>
-            <h3>{{ $t('home.features.management') || 'Gestión Centralizada' }}</h3>
-            <p>{{ $t('home.features.managementDesc') || 'Administra todos tus equipos desde una sola plataforma.' }}</p>
+            <h3>{{ $t('home.features.management') }}</h3>
+            <p>{{ $t('home.features.managementDesc') }}</p>
           </div>
         </div>
       </div>
@@ -68,13 +84,22 @@ export default {
 
 <style scoped>
 .home-page {
-  min-height: 100vh;
+  border-radius: var(--op-radius-lg);
+  overflow: hidden;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--op-space-3);
+  margin-top: var(--op-space-6);
 }
 
 .hero-section {
-  background: linear-gradient(135deg, #0079c2 0%, #005a94 100%);
+  background: linear-gradient(135deg, var(--op-brand) 0%, #005a94 100%);
   color: white;
-  padding: 4rem 2rem;
+  padding: clamp(2rem, 6vw, 4rem) var(--op-space-5);
   text-align: center;
 }
 
@@ -84,7 +109,7 @@ export default {
 }
 
 .hero-title {
-  font-size: 3rem;
+  font-size: clamp(1.9rem, 1.2rem + 3vw, 3rem);
   font-weight: 700;
   margin: 0 0 1rem;
   line-height: 1.2;
@@ -98,7 +123,7 @@ export default {
 }
 
 .summary-section {
-  background: #f8f9fa;
+  background: var(--op-surface-muted);
   padding: 3rem 0;
 }
 
@@ -115,14 +140,14 @@ export default {
 .features-title {
   text-align: center;
   color: #333;
-  font-size: 2.5rem;
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem);
   font-weight: 600;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 2rem;
 }
 
@@ -139,13 +164,13 @@ export default {
 .feature-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  border-color: #0079c2;
+  border-color: var(--op-brand);
 }
 
 .feature-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #0079c2 0%, #005a94 100%);
+  background: linear-gradient(135deg, var(--op-brand) 0%, #005a94 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;

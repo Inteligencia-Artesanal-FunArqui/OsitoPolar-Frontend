@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @class TemperatureFormattingService
  * @description Service for formatting temperature-related data
  */
@@ -32,12 +32,13 @@ export class TemperatureFormattingService {
      * @param {string} date - Date string
      * @returns {string} Day name (Mon, Tue, etc.)
      */
-    static getDayName(date) {
+    static getDayName(date, locale = 'en') {
         if (!date) return '';
 
-        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         const dateObj = new Date(date);
-        return days[dateObj.getDay()];
+        if (Number.isNaN(dateObj.getTime())) return '';
+        // yyyy-MM-dd strings parse as UTC midnight, so read the weekday in UTC to avoid an off-by-one day
+        return dateObj.toLocaleDateString(locale === 'es' ? 'es-PE' : 'en-US', { weekday: 'short', timeZone: 'UTC' });
     }
     /**
      * Format temperature with proper precision

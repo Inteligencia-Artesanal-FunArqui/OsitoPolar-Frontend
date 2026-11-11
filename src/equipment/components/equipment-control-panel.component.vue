@@ -117,10 +117,8 @@ export default {
             }
           }));
 
-          console.log('Temperature readings loaded:', this.readings.length, 'items');
         } else {
           this.readings = [];
-          console.log('ℹ No temperature readings available for equipment', this.equipment.id);
         }
 
       } catch (error) {
@@ -189,10 +187,10 @@ export default {
 
 <template>
   <div class="control-panel">
-    <h2 class="control-panel-title">Equipment Control</h2>
+    <h2 class="control-panel-title">{{ $t('equipment.control.title') }}</h2>
 
     <div class="control-section">
-      <h3 class="section-title">Power Control</h3>
+      <h3 class="section-title">{{ $t('equipment.control.powerControl') }}</h3>
       <equipment-power-toggle
           :is-powered-on="equipment.isPoweredOn"
           @toggle="onTogglePower"
@@ -200,7 +198,7 @@ export default {
     </div>
 
     <div class="control-section" :class="{ disabled: !equipment.isPoweredOn }">
-      <h3 class="section-title">Temperature Setting</h3>
+      <h3 class="section-title">{{ $t('equipment.control.temperatureSetting') }}</h3>
       <equipment-temperature-control
           :current-temperature="equipment.currentTemperature"
           :set-temperature="equipment.setTemperature"
@@ -217,17 +215,17 @@ export default {
           :style="{ backgroundColor: statusColor }"
       ></div>
       <div class="status-text">
-        <strong>Status:</strong> {{ temperatureStatus }}
+        <strong>{{ $t('equipment.statusLabel') }}:</strong> <op-status-badge kind="temperature" :value="temperatureStatus" />
       </div>
     </div>
 
     <!-- Analytics Preview -->
     <div class="analytics-preview-section">
-      <h3 class="section-title">Temperature Analytics</h3>
+      <h3 class="section-title">{{ $t('equipment.control.analytics') }}</h3>
 
       <div v-if="loadingAnalytics" class="analytics-loading">
         <pv-progress-spinner style="width:40px; height:40px" />
-        <span>Loading analytics...</span>
+        <span>{{ $t('equipment.control.loadingAnalytics') }}</span>
       </div>
 
       <div v-else class="analytics-preview-container">
@@ -235,7 +233,7 @@ export default {
         <div class="analytics-cards">
 
           <div class="analytics-card current-temperature-card">
-            <h4 class="card-title">Current Temperature</h4>
+            <h4 class="card-title">{{ $t('equipment.control.currentTemperature') }}</h4>
             <div class="temperature-display">
               <div class="temperature-gauge">
                 <div class="gauge-line"></div>
@@ -248,7 +246,7 @@ export default {
 
           <!-- Temperature Chart -->
           <div class="analytics-card temperature-chart-card">
-            <h4 class="card-title">Temperature Over Time</h4>
+            <h4 class="card-title">{{ $t('equipment.control.temperatureOverTime') }}</h4>
             <div class="chart-container">
               <temperature-chart-component :readings="readings" />
             </div>
@@ -261,7 +259,7 @@ export default {
             class="view-analytics-button"
         >
           <i class="pi pi-chart-line"></i>
-          View Full Analytics
+          {{ $t('equipment.control.viewFullAnalytics') }}
         </router-link>
       </div>
     </div>

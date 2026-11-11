@@ -1,5 +1,9 @@
-﻿import httpInstance from "../../shared/http.instance.js";
+import httpInstance from "../../shared/http.instance.js";
 import { AuthResponse } from '../models/auth-response.entity';
+
+const authStorageKey = key => import.meta.env.VITE_DEMO_MODE === 'true'
+    ? `ositopolar-vue-demo-${key}`
+    : key;
 
 /**
  * @class AuthService
@@ -54,9 +58,15 @@ class AuthService {
     /**
      * Sign out current user
      */
+    /** GET /users/{id}: real UserResource (plan, balance, equipment usage). Callers treat failure as optional data. */
+    async getUserProfile(id) {
+        const response = await httpInstance.get(`${this._usersEndpoint}/${id}`);
+        return response.data;
+    }
+
     signOut() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.removeItem(authStorageKey('token'));
+        localStorage.removeItem(authStorageKey('user'));
         delete httpInstance.defaults.headers.common['Authorization'];
 
         // Emit custom event to notify components
@@ -68,7 +78,7 @@ class AuthService {
      * @returns {AuthResponse|null}
      */
     getCurrentUser() {
-        const userStr = localStorage.getItem('user');
+        const userStr = localStorage.getItem(authStorageKey('user'));
         return userStr ? new AuthResponse(JSON.parse(userStr)) : null;
     }
 
@@ -77,7 +87,7 @@ class AuthService {
      * @returns {string|null}
      */
     getToken() {
-        return localStorage.getItem('token');
+        return localStorage.getItem(authStorageKey('token'));
     }
 
     /**
@@ -94,8 +104,8 @@ class AuthService {
      * @param {AuthResponse} authData
      */
     _saveAuthData(authData) {
-        localStorage.setItem('token', authData.token);
-        localStorage.setItem('user', JSON.stringify(authData));
+        localStorage.setItem(authStorageKey('token'), authData.token);
+        localStorage.setItem(authStorageKey('user'), JSON.stringify(authData));
         httpInstance.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
 
 

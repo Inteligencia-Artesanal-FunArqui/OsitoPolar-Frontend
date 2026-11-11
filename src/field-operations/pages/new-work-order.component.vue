@@ -1,5 +1,4 @@
-<script lang="ts">
-import { useRouter } from 'vue-router';
+<script>
 import { EquipmentService } from '../../equipment/services/equipment.service';
 import { WorkOrderService } from '../services/work-order.service';
 import { ServiceRequestService } from '../../service/services/service-request.service';
@@ -8,7 +7,6 @@ export default {
   data() {
     return {
       currentStep: 1,
-      router: useRouter(),
       formData: {
         serviceRequestId: null,
         title: '',
@@ -29,6 +27,10 @@ export default {
     };
   },
   computed: {
+    // work order service types come from the work-order backend enum (different from service requests)
+    serviceTypes() {
+      return ['Maintenance', 'Repair', 'Installation', 'Inspection', 'Emergency'];
+    },
     timeSlots() {
       return [
         { id: 1, time: '08:00 - 10:00', available: true },
@@ -42,7 +44,28 @@ export default {
       return this.serviceRequests;
     }
   },
+  watch: {
+    // linking a service request pre-fills the wizard (the user can still edit everything)
+    'formData.serviceRequestId'(id) {
+      const sr = this.serviceRequests.find(r => String(r.id) === String(id));
+      if (!sr) return;
+      const typeMap = { PreventiveMaintenance: 'Maintenance', CorrectiveMaintenance: 'Repair', Installation: 'Installation', Diagnostic: 'Inspection' };
+      Object.assign(this.formData, {
+        title: sr.title || this.formData.title,
+        description: sr.description || this.formData.description,
+        issueDetails: sr.issueDetails || sr.description || this.formData.issueDetails,
+        equipmentId: sr.equipmentId ? String(sr.equipmentId) : this.formData.equipmentId,
+        serviceType: typeMap[sr.serviceType] || this.formData.serviceType,
+        priority: String(sr.priority || 'medium').toLowerCase(),
+        serviceAddress: sr.serviceAddress || this.formData.serviceAddress
+      });
+    }
+  },
   methods: {
+    typeLabel(type) {
+      const key = `equipment.types.${String(type || '').replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase()}`;
+      return this.$te(key) ? this.$t(key) : (type || '-');
+    },
     handleNext() {
       if (this.currentStep < 3) {
         this.currentStep++;
@@ -77,8 +100,7 @@ export default {
               serviceAddress: this.formData.serviceAddress
             };
 
-            const response = await this.workOrderService.createWorkOrder(payload);
-            console.log('Work Order created:', response);
+            await this.workOrderService.createWorkOrder(payload);
 
             this.$toast.add({
               severity: 'success',
@@ -87,7 +109,7 @@ export default {
               life: 3000
             });
 
-            this.router.push('/work-orders');
+            this.$router.push('/work-orders');
           } catch (error) {
             console.error('Error submitting:', error);
 
@@ -115,13 +137,16 @@ export default {
       });
     },
     getServiceRequestSummary(sr) {
-      return `SR #${sr.orderNumber} - ${sr.description.substring(0, 50)}${sr.description.length > 50 ? '...' : ''} (${this.$t(`service.status.${sr.status}`)})`;
+      if (!sr) return '';
+      const text = sr.description || sr.title || '';
+      return `${sr.orderNumber || `#${sr.id}`} - ${text.substring(0, 50)}${text.length > 50 ? '...' : ''} (${this.$t(`badge.requestStatus.${sr.status}`)})`;
     }
   },
   created() {
-    this.equipmentService.getAll()
-        .then(response => {
-          this.equipments = this.equipmentService.mapEquipment(response.data);
+    this.equipmentService.getAllEquipments()
+        .then(equipments => {
+          // service already returns Equipment instances (no axios wrapper)
+          this.equipments = equipments;
         })
         .catch(error => {
           console.error('Error loading equipment:', error);
@@ -152,12 +177,12 @@ export default {
 </script>
 
 <template>
-  <div class="container">
-    <RouterLink to="/work-orders" class="link-back">
-      {{ $t('workOrders.backToWorkOrders') }}
-    </RouterLink>
-
-    <h1 class="title">{{ $t('workOrders.newWorkOrder') }}</h1>
+  <div class="op-wizard">
+    <op-page-header
+        :title="$t('workOrders.newWorkOrder')"
+        :subtitle="$t('workOrders.form.subtitle')"
+        back-to="/work-orders"
+        :back-label="$t('workOrders.backToWorkOrders')" />
     <div class="step-indicator mb-8">
       <div
           v-for="(step, index) in [$t('workOrders.steps.details'), $t('workOrders.steps.equipmentScheduling'), $t('workOrders.steps.confirmation')]"
@@ -211,7 +236,7 @@ export default {
         <label>{{ $t('workOrders.form.selectEquipment') }}</label>
         <select v-model="formData.equipmentId" class="input">
           <option disabled value="">{{ $t('workOrders.form.selectEquipmentPlaceholder') }}</option>
-          <option v-for="e in equipments" :key="e.id" :value="e.id.toString()">
+          <option v-for="e in equipments" :key="e.id" :value="String(e.id)">
             {{ e.name }} - {{ e.location?.name || $t('common.notSpecified') }}
           </option>
         </select>
@@ -219,14 +244,14 @@ export default {
 
       <div v-if="formData.equipmentId" class="info-box">
         <div
-            v-for="e in equipments.filter(e => e.id.toString() === formData.equipmentId)"
+            v-for="e in equipments.filter(e => String(e.id) === String(formData.equipmentId))"
             :key="e.id"
-            class="grid grid-cols-2 gap-2"
+            class="info-grid"
         >
           <div><strong>{{ $t('equipment.name') }}:</strong> {{ e.name }}</div>
           <div><strong>{{ $t('common.location') }}:</strong> {{ e.location?.name || $t('common.notSpecified') }}</div>
-          <div><strong>{{ $t('equipment.type') }}:</strong> {{ $t(`equipment.types.${e.type}`) }}</div>
-          <div><strong>{{ $t('equipment.status') }}:</strong> {{ $t(`equipment.status.${e.getTemperatureStatus()}`) }}</div>
+          <div><strong>{{ $t('equipment.type') }}:</strong> {{ typeLabel(e.type) }}</div>
+          <div><strong>{{ $t('equipment.statusLabel') }}:</strong> <op-status-badge kind="temperature" :value="e.getTemperatureStatus()" /></div>
         </div>
       </div>
 
@@ -234,10 +259,7 @@ export default {
         <label>{{ $t('workOrders.form.serviceType') }}</label>
         <select v-model="formData.serviceType" class="input">
           <option disabled value="">{{ $t('workOrders.form.selectServiceType') }}</option>
-          <option value="preventive">{{ $t('service.form.preventive') }}</option>
-          <option value="repair">{{ $t('service.form.repair') }}</option>
-          <option value="installation">{{ $t('service.form.installation') }}</option>
-          <option value="diagnostic">{{ $t('service.form.diagnostic') }}</option>
+          <option v-for="type in serviceTypes" :key="type" :value="type">{{ $t(`badge.serviceType.${type.toLowerCase()}`) }}</option>
         </select>
       </div>
 
@@ -288,13 +310,13 @@ export default {
       <div class="info-box">
         <h2 class="text-primary font-semibold mb-2">{{ $t('workOrders.form.workOrderSummary') }}</h2>
         <ul class="space-y-1 text-gray-700 text-sm">
-          <li v-if="formData.serviceRequestId"><strong>{{ $t('service.serviceRequest') }}:</strong> {{ getServiceRequestSummary(serviceRequests.find(sr => sr.id === formData.serviceRequestId)) || '-' }}</li>
-          <li><strong>{{ $t('workOrders.title') }}:</strong> {{ formData.title }}</li>
+          <li v-if="formData.serviceRequestId"><strong>{{ $t('service.serviceRequest') }}:</strong> {{ getServiceRequestSummary(serviceRequests.find(sr => String(sr.id) === String(formData.serviceRequestId))) || '-' }}</li>
+          <li><strong>{{ $t('workOrders.titleLabel') }}:</strong> {{ formData.title }}</li>
           <li><strong>{{ $t('workOrders.description') }}:</strong> {{ formData.description }}</li>
           <li><strong>{{ $t('workOrders.issueDetails') }}:</strong> {{ formData.issueDetails }}</li>
-          <li><strong>{{ $t('equipment.equipment') }}:</strong> {{ equipments.find(e => e.id.toString() === formData.equipmentId)?.name || '-' }}</li>
-          <li><strong>{{ $t('workOrders.serviceType') }}:</strong> {{ $t(`service.form.${formData.serviceType}`) }}</li>
-          <li><strong>{{ $t('workOrders.priority') }}:</strong> {{ $t(`workOrders.form.${formData.priority}`) }}</li>
+          <li><strong>{{ $t('equipment.equipment') }}:</strong> {{ equipments.find(e => String(e.id) === String(formData.equipmentId))?.name || '-' }}</li>
+          <li><strong>{{ $t('workOrders.serviceType') }}:</strong> {{ formData.serviceType ? $t(`badge.serviceType.${formData.serviceType.toLowerCase()}`) : '-' }}</li>
+          <li><strong>{{ $t('workOrders.priority') }}:</strong> {{ $t(`badge.priority.${formData.priority}`) }}</li>
           <li><strong>{{ $t('workOrders.scheduledFor') }}:</strong> {{ formData.scheduledDate }}</li>
           <li><strong>{{ $t('workOrders.timeSlot') }}:</strong> {{ formData.timeSlot }}</li>
           <li v-if="formData.serviceAddress"><strong>{{ $t('common.address') }}:</strong> {{ formData.serviceAddress }}</li>
@@ -307,186 +329,4 @@ export default {
       </div>
     </div>
   </div>
-  <pv-confirm-dialog
-      :pt="{
-     root: { class: 'custom-confirm-dialog' },
-     header: { class: 'custom-confirm-header' },
-    message: { class: 'custom-confirm-message' },
-    icon: { class: 'custom-confirm-icon' },
-    footer: { class: 'custom-confirm-footer' }
-  }"
-  />
-  <pv-toast />
 </template>
-
-<style scoped>
-.container {
-  max-width: 768px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-  background-color: #f0f9ff;
-  min-height: 100vh;
-}
-
-.title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #055f84;
-  margin-bottom: 1.5rem;
-}
-
-.link-back {
-  display: inline-block;
-  color: #0884c4;
-  margin-bottom: 1rem;
-  font-weight: 500;
-}
-
-.card {
-  background: #ffffff;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: box-shadow 0.3s, border-color 0.3s;
-}
-
-.input:focus {
-  border-color: #0884c4;
-  box-shadow: 0 0 0 3px rgba(8, 132, 196, 0.25);
-  outline: none;
-}
-
-.radio-group {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-  color: #374151;
-}
-
-.checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  color: #374151;
-}
-
-.actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1rem;
-}
-
-.btn {
-  background-color: #0884c4;
-  color: white;
-  padding: 0.5rem 1.25rem;
-  border: none;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.btn:hover:not(:disabled) {
-  background-color: #056a9d;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-outline {
-  background-color: transparent;
-  border: 1px solid #0884c4;
-  color: #0884c4;
-  padding: 0.5rem 1.25rem;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  transition: all 0.3s;
-}
-
-.btn-outline:hover {
-  background-color: #e0f3fb;
-}
-
-.info-box {
-  background-color: #e6f6fd;
-  padding: 1rem;
-  border-radius: 0.75rem;
-}
-
-.step-indicator {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  margin-bottom: 2rem;
-  position: relative;
-}
-
-.step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  flex: 1;
-  text-align: center;
-  z-index: 1;
-}
-
-.step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: 35px;
-  right: -50%;
-  width: 100%;
-  height: 2px;
-  background-color: #d1d5db;
-  z-index: 0;
-}
-
-.step.completed:not(:last-child)::after {
-  background-color: #0884c4;
-}
-
-.circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #d1d5db;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  transition: background-color 0.3s;
-}
-
-.step.active .circle {
-  background-color: #0884c4;
-}
-
-.step.completed .circle {
-  background-color: #0884c4;
-}
-
-.label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #4b5563;
-}
-</style>

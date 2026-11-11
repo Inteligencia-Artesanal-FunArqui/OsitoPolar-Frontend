@@ -1,7 +1,7 @@
 <script>
 /**
  * @component plan-card
- * @description Displays a subscription plan card with details and upgrade option.
+ * @description Displays a subscription plan card with limits, features and upgrade action.
  */
 export default {
   name: 'plan-card',
@@ -27,146 +27,105 @@ export default {
       required: true,
     },
   },
+  computed: {
+    // plan features come from the backend in English: show the translated text when we have one, and drop the
+    // leading "Up to N units / clients" line (the card already shows the limit in its own row)
+    featureList() {
+      const limitLine = /^(up to \d+ (units|clients)|manage up to \d+ clients|unlimited clients)$/i;
+      return (this.plan.features || []).filter(f => !limitLine.test(f)).map(text => {
+        const key = `plans.featureNames.${String(text).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`;
+        return { text, label: this.$te(key) ? this.$t(key) : text };
+      });
+    },
+    isCurrent() {
+      return this.currentPlanId !== null && String(this.plan.id) === String(this.currentPlanId);
+    },
+    // provider plans carry maxClients (null = unlimited); owner plans carry maxEquipment
+    isProviderPlan() {
+      // the real backend sends maxClients: null on owner plans too, so key off maxEquipment instead
+      return !this.plan.maxEquipment;
+    },
+    limitText() {
+      if (this.isProviderPlan) {
+        return this.plan.maxClients ? this.$t('plans.maxClients', { count: this.plan.maxClients }) : this.$t('plans.unlimitedClients');
+      }
+      return this.plan.maxEquipment ? this.$t('plans.maxUnits', { count: this.plan.maxEquipment }) : this.$t('plans.unlimitedUnits');
+    }
+  },
   methods: {
-
     handleUpgrade() {
       this.onUpgrade(this.plan);
     },
   },
 };
 </script>
+
 <template>
-  <pv-card>
-    <template #content>
-      <div class="card-content">
-        <h3 class="plan-title">{{ plan.name }}</h3>
-        <p class="plan-price">${{ plan.price.toFixed(2) }} USD/month</p>
-        <p class="plan-limit" v-if="plan.maxEquipment">Up to {{ plan.maxEquipment }} units</p>
-        <p class="plan-limit" v-if="plan.maxClients">Manage up to {{ plan.maxClients || 'Unlimited' }} clients</p>
-        <ul class="feature-list">
-          <li v-for="feature in plan.features" :key="feature" class="feature-item">
-            <span class="checkmark">✔</span> {{ feature }}
-          </li>
-        </ul>
-      </div>
-      <div class="card-footer">
-        <pv-button
-            v-if="plan.id !== currentPlanId"
-            @click="handleUpgrade"
-            :disabled="upgrading"
-            :label="$t('plans.upgrade')"
-            :loading="upgrading && selectedPlanId === plan.id"
-        />
-        <p v-if="upgrading && selectedPlanId === plan.id" class="upgrading-message">
-          {{ $t('plans.processingPayment')}}
-        </p>
-        <p v-else-if="plan.id === currentPlanId" class="current-plan-message">
-          {{ $t('plans.currentPlan') }}</p>
-      </div>
-    </template>
-  </pv-card>
+  <article class="plan-card op-card" :class="{ 'is-current': isCurrent }">
+    <span v-if="isCurrent" class="current-ribbon">{{ $t('plans.currentPlan') }}</span>
+    <div class="card-content">
+      <h3 class="plan-title">{{ plan.name }}</h3>
+      <p class="plan-price">
+        <span class="amount">${{ plan.price.toFixed(2) }}</span>
+        <span class="period">USD / {{ $t('plans.perMonth') }}</span>
+      </p>
+      <p class="plan-limit">{{ limitText }}</p>
+      <ul class="feature-list">
+        <li v-for="feature in featureList" :key="feature.text" class="feature-item">
+          <i class="pi pi-check checkmark" aria-hidden="true"></i> {{ feature.label }}
+        </li>
+      </ul>
+    </div>
+    <div class="card-footer">
+      <pv-button
+          v-if="!isCurrent"
+          @click="handleUpgrade"
+          :disabled="upgrading"
+          :label="$t('plans.upgrade')"
+          :loading="upgrading && selectedPlanId === plan.id"
+          class="w-full"
+      />
+      <p v-if="upgrading && selectedPlanId === plan.id" class="upgrading-message">
+        {{ $t('plans.processingPayment') }}
+      </p>
+    </div>
+  </article>
 </template>
+
 <style scoped>
-.p-card {
-  display: flex;
-  height: 100%;
-  padding: 1rem;
-  width: 480px;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background-color: #ffffff;
-  transition: transform 0.2s;
-  min-height: 550px;
-}
-
-.p-card:hover {
-  transform: translateY(-5px);
-}
-
-.card-content {
-  padding: 20px;
-  text-align: center;
-  flex-grow: 1;
+.plan-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  height: 450px;
-  overflow-y: auto;
-}
-
-.card-footer {
-  padding: 10px 0;
-  text-align: center;
-  border-top: 1px solid #e0e0e0;
-  min-height: 60px;
-}
-
-.plan-price {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.plan-limit {
-  font-size: 1rem;
-  color: #555;
-  margin-bottom: 20px;
-}
-
-.feature-list {
-  list-style: none;
   padding: 0;
-  margin: 15px 0;
-  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.plan-card:hover { transform: translateY(-4px); box-shadow: var(--op-shadow-md); }
+.plan-card.is-current { border-color: var(--op-brand); box-shadow: 0 0 0 2px var(--op-brand-soft), var(--op-shadow-sm); }
+
+.current-ribbon {
+  position: absolute;
+  top: var(--op-space-3);
+  right: var(--op-space-3);
+  background: var(--op-brand);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--op-radius-pill);
 }
 
-.feature-list li {
-  margin: 10px 0;
-  color: #666;
-  font-size: 0.95rem;
-}
+.card-content { padding: var(--op-space-6); flex: 1; text-align: center; }
+.plan-title { font-size: 1.25rem; color: var(--op-text-strong); margin-bottom: var(--op-space-2); }
+.plan-price { margin-bottom: var(--op-space-2); }
+.plan-price .amount { font-size: 2.2rem; font-weight: 700; color: var(--op-brand); }
+.plan-price .period { display: block; font-size: 0.85rem; color: var(--op-text-muted); }
+.plan-limit { font-weight: 600; color: var(--op-text-strong); margin-bottom: var(--op-space-4); }
 
-.checkmark {
-  color: #4CAF50;
-  margin-right: 8px;
-}
+.feature-list { list-style: none; padding: 0; margin: 0; text-align: left; display: grid; gap: var(--op-space-2); }
+.feature-item { color: var(--op-text); font-size: 0.93rem; display: flex; gap: var(--op-space-2); align-items: flex-start; }
+.checkmark { color: var(--op-success); margin-top: 0.2rem; font-size: 0.8rem; }
 
-.p-button {
-  display: block;
-  width: 100%;
-  background-color: #0079c2;
-  border: none;
-  padding: 12px;
-  font-size: 1rem;
-  border-radius: 5px;
-  transition: background-color 0.3s;
-}
-
-.p-button:hover:not(:disabled) {
-  background-color: #005f99;
-}
-
-.p-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.upgrading-message {
-  color: #4CAF50;
-  font-style: italic;
-  font-size: 0.9rem;
-  margin-top: 10px;
-}
-
-.current-plan-message {
-  font-size: large;
-  color: #0079c2;
-  font-weight: bold;
-  margin-top: 10px;
-}
-
-
-
+.card-footer { padding: var(--op-space-4) var(--op-space-6) var(--op-space-6); text-align: center; }
+.upgrading-message { color: var(--op-success-text); font-style: italic; margin-top: var(--op-space-2); }
 </style>

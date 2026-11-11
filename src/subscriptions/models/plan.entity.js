@@ -20,6 +20,7 @@ export class Plan {
                     price = 0,
                     billingCycle = ' ',
                     maxEquipment = 0,
+                    maxClients = undefined, // provider plans only; null = unlimited
                     features = [],
                 }) {
         this.id = id;
@@ -27,6 +28,7 @@ export class Plan {
         this.price = typeof price === 'string' ? parseFloat(price) || 0 : (price || 0);
         this.billingCycle = billingCycle;
         this.maxEquipment = typeof maxEquipment === 'string' ? parseInt(maxEquipment, 10) || 0 : (maxEquipment || 0);
+        this.maxClients = maxClients;
         this.features = features;
     }
 }

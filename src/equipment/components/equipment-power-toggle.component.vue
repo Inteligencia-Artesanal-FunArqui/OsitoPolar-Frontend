@@ -39,9 +39,9 @@ export default {
             />
       <span
           class="power-label"
-          :style="{ color: isPoweredOn ? '#4CAF50' : '#666' }"
+          :style="{ color: isPoweredOn ? 'var(--op-success)' : 'var(--op-text-muted)' }"
       >
-        {{ isPoweredOn ? 'ON' : 'OFF' }}
+        {{ isPoweredOn ? $t('equipment.control.on') : $t('equipment.control.off') }}
       </span>
     </div>
 
@@ -49,11 +49,13 @@ export default {
       <button
           class="round-button"
           :class="{ 'active': isPoweredOn }"
+          :aria-label="$t('equipment.control.power')"
+          :aria-pressed="isPoweredOn"
           @click="togglePower"
       >
         <i class="pi pi-power-off"></i>
       </button>
-      <span class="button-label">Power</span>
+      <span class="button-label">{{ $t('equipment.control.power') }}</span>
     </div>
   </div>
 </template>

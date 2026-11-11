@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 /**
  * @component temperature-gauge
  * @description Displays current temperature in a gauge visualization
@@ -19,9 +19,10 @@ export default {
      * @type {Number}
      * @description Minimum value for the gauge scale
      */
+    // null = derive the dial range from the optimal band (freezers sit around -20, not 0..40)
     minValue: {
       type: Number,
-      default: 0
+      default: null
     },
 
     /**
@@ -30,7 +31,7 @@ export default {
      */
     maxValue: {
       type: Number,
-      default: 40
+      default: null
     },
 
     /**
@@ -56,9 +57,18 @@ export default {
      * Calculates the rotation angle for the gauge needle
      * @returns {string} CSS transform rotation value
      */
+    dialMin() {
+      return this.minValue ?? Math.min(this.optimalMin - 10, this.value - 2);
+    },
+
+    dialMax() {
+      return this.maxValue ?? Math.max(this.optimalMax + 10, this.value + 2);
+    },
+
     needleRotation() {
-      const range = this.maxValue - this.minValue;
-      const valuePercentage = (this.value - this.minValue) / range;
+      const range = this.dialMax - this.dialMin || 1;
+      // clamp so an out-of-range reading pins the needle at the end of the dial instead of spinning off it
+      const valuePercentage = Math.min(1, Math.max(0, (this.value - this.dialMin) / range));
       const angle = -90 + (valuePercentage * 180); // -90 to 90 degrees
       return `rotate(${angle}deg)`;
     },
@@ -141,7 +151,7 @@ export default {
   height: 200px;
   border: 20px solid #2196F3;
   border-radius: 50%;
-  clip-path: polygon(0 100%, 100% 100%, 100% 50%, 0 50%);
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
 }
 
 .gauge-cover {
@@ -152,7 +162,7 @@ export default {
   height: 200px;
   background: white;
   border-radius: 50%;
-  clip-path: polygon(0 100%, 100% 100%, 100% 60%, 0 60%);
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
   transform: scale(0.8);
 }
 

@@ -3,6 +3,9 @@
  * @component equipment-info-card
  * @description Display card with equipment information
  */
+import { equipmentTypeKey } from "../../shared/badge-tokens.js";
+import { formatDate } from "../../shared/format.js";
+
 export default {
   name: "equipment-info-card",
   props: {
@@ -14,71 +17,80 @@ export default {
       type: Object,
       required: true
     }
+  },
+  computed: {
+    typeLabel() {
+      const key = equipmentTypeKey(this.equipment.type);
+      return this.$te(key) ? this.$t(key) : (this.equipment.type || '-');
+    },
+    installationDate() {
+      return formatDate(this.equipment.installationDate, this.$i18n.locale) || '-';
+    }
   }
 }
 </script>
 
 <template>
   <div class="info-card">
-    <h2 class="card-title">Equipment Information</h2>
+    <h2 class="card-title">{{ $t('equipment.info.title') }}</h2>
 
     <div class="info-grid">
       <div class="info-item">
-        <div class="info-label">Name</div>
+        <div class="info-label">{{ $t('equipment.info.name') }}</div>
         <div class="info-value">{{ equipment.name }}</div>
       </div>
 
       <div class="info-item">
-        <div class="info-label">Type</div>
+        <div class="info-label">{{ $t('equipment.info.type') }}</div>
 
-        <div class="info-value">{{ equipment.getTypeDisplay ? equipment.getTypeDisplay() : equipment.type }}</div>
+        <div class="info-value">{{ typeLabel }}</div>
       </div>
 
       <div class="info-item">
-        <div class="info-label">Model</div>
+        <div class="info-label">{{ $t('equipment.info.model') }}</div>
         <div class="info-value">{{ equipment.model }}</div>
       </div>
 
       <div class="info-item">
-        <div class="info-label">Manufacturer</div>
+        <div class="info-label">{{ $t('equipment.info.manufacturer') }}</div>
         <div class="info-value">{{ equipment.manufacturer }}</div>
       </div>
 
       <div class="info-item">
-        <div class="info-label">Serial Number</div>
+        <div class="info-label">{{ $t('equipment.info.serialNumber') }}</div>
         <div class="info-value">{{ equipment.serialNumber }}</div>
       </div>
 
       <div class="info-item">
-        <div class="info-label">Code</div>
+        <div class="info-label">{{ $t('equipment.info.code') }}</div>
         <div class="info-value">{{ equipment.code }}</div>
       </div>
 
       <div class="info-item">
-        <div class="info-label">Installation Date</div>
-        <div class="info-value">{{ equipment.getFormattedInstallationDate ? equipment.getFormattedInstallationDate() : equipment.installationDate }}</div>
+        <div class="info-label">{{ $t('equipment.info.installationDate') }}</div>
+        <div class="info-value">{{ installationDate }}</div>
       </div>
 
       <div class="info-item">
-        <div class="info-label">Energy Consumption</div>
+        <div class="info-label">{{ $t('equipment.info.energy') }}</div>
 
         <div class="info-value">{{ equipment.energyConsumptionCurrent }} {{ equipment.energyConsumptionUnit }}</div>
       </div>
 
       <div class="info-item">
-        <div class="info-label">Location</div>
+        <div class="info-label">{{ $t('equipment.info.location') }}</div>
 
         <div class="info-value">{{ equipment.locationName }}</div>
       </div>
 
       <div class="info-item">
-        <div class="info-label">Address</div>
+        <div class="info-label">{{ $t('equipment.info.address') }}</div>
         <div class="info-value">{{ equipment.locationAddress }}</div>
       </div>
     </div>
 
     <div class="info-notes" v-if="equipment.notes">
-      <h3 class="notes-title">Notes</h3>
+      <h3 class="notes-title">{{ $t('equipment.info.notes') }}</h3>
       <p class="notes-content">{{ equipment.notes }}</p>
     </div>
   </div>
@@ -102,7 +114,7 @@ export default {
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem;
 }
 

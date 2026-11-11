@@ -15,14 +15,14 @@ export default {
 .hero-section {
   text-align: center;
   padding: 3rem 0;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, var(--op-bg) 0%, #c3cfe2 100%);
   border-radius: 12px;
   margin-bottom: 2rem;
 }
 
 .hero-title {
   font-size: 2.5rem;
-  color: #0079c2;
+  color: var(--op-brand);
   font-weight: 600;
   margin-bottom: 0.5rem;
 }

@@ -15,6 +15,7 @@ export default {
 
   data() {
     return {
+      isDemo: import.meta.env.VITE_DEMO_MODE === 'true',
       credentials: {
         username: '',
         password: ''
@@ -42,15 +43,16 @@ export default {
       }
       
       this.submitted = true;
-      console.log('[SignInForm] Submitting:', { 
-        username: this.credentials.username.trim(), 
-        passwordLength: this.credentials.password.length 
-      });
-      
       this.$emit('submit', { 
         username: this.credentials.username.trim(), 
         password: this.credentials.password 
       });
+    },
+
+    // demo mode only: one click fills the only account the mock accepts
+    fillDemoCredentials() {
+      this.credentials.username = 'pedro@demo.local';
+      this.credentials.password = 'Demo123!';
     },
 
     handleAdminMode() {
@@ -65,46 +67,57 @@ export default {
   <form @submit.prevent="handleSubmit" class="sign-in-form">
     <div class="form-header">
       <div class="logo-container">
-        <i class="pi pi-user-circle" style="font-size: 4rem; color: #0079c2;"></i>
+        <i class="pi pi-user" style="font-size: 4rem; color: var(--op-brand);" aria-hidden="true"></i>
       </div>
-      <h2>Sign In</h2>
+      <h2>{{ $t('auth.signInTitle') }}</h2>
+      <p class="form-subtitle">{{ $t('auth.signInSubtitle') }}</p>
     </div>
 
+    <pv-message v-if="isDemo" severity="info" :closable="false" class="demo-hint">
+      <div class="demo-hint__body">
+        <span>{{ $t('auth.demoHint') }}</span>
+        <pv-button type="button" :label="$t('auth.useDemo')" icon="pi pi-bolt" size="small" severity="secondary" outlined @click="fillDemoCredentials" />
+      </div>
+    </pv-message>
+
     <div class="field">
-      <label for="username" class="field-label">Username</label>
+      <label for="username" class="field-label">{{ $t('auth.username') }}</label>
       <pv-input-text
           id="username"
           v-model="credentials.username"
-          placeholder="Enter your username"
+          :placeholder="$t('auth.usernamePlaceholder')"
+          autocomplete="username"
           class="w-full input-field" />
     </div>
 
     <div class="field">
-      <label for="password" class="field-label">Password</label>
+      <label for="password" class="field-label">{{ $t('auth.password') }}</label>
       <pv-password
           id="password"
           v-model="credentials.password"
-          placeholder="Enter your password"
+          :placeholder="$t('auth.passwordPlaceholder')"
           class="w-full input-field"
+          input-class="w-full"
+          fluid
           :feedback="false"
           toggleMask />
     </div>
 
     <pv-button
         type="submit"
-        label="Sign In"
+        :label="$t('auth.signInButton')"
         icon="pi pi-sign-in"
         :loading="loading"
         :disabled="loading || submitted"
         class="w-full sign-in-button" />
 
     <div class="divider">
-      <span>OR</span>
+      <span>{{ $t('auth.or') }}</span>
     </div>
 
     <pv-button
         type="button"
-        label="I'm an Administrator"
+        :label="$t('auth.adminButton')"
         icon="pi pi-shield"
         class="w-full admin-button"
         @click="handleAdminMode" />
@@ -126,7 +139,7 @@ export default {
 }
 
 .form-header h2 {
-  color: #0079c2;
+  color: var(--op-brand);
   font-size: 1.75rem;
   font-weight: 600;
   margin: 0;
@@ -164,7 +177,7 @@ export default {
 
 :deep(.p-inputtext:focus),
 :deep(.p-password-input:focus) {
-  border-color: #0079c2;
+  border-color: var(--op-brand);
   box-shadow: 0 0 0 2px rgba(0, 121, 194, 0.1);
   outline: none;
 }
@@ -173,7 +186,7 @@ export default {
   padding: 0.75rem 1rem;
   font-size: 1rem;
   font-weight: 600;
-  background-color: #0079c2;
+  background-color: var(--op-brand);
   border: none;
   color: white;
   border-radius: 6px;
@@ -236,4 +249,8 @@ export default {
 :deep(.p-password-toggle-icon) {
   color: #6b7280;
 }
+
+.form-subtitle { margin-top: var(--op-space-1); color: var(--op-text-muted); }
+.demo-hint { margin-bottom: var(--op-space-4); }
+.demo-hint__body { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--op-space-3); }
 </style>

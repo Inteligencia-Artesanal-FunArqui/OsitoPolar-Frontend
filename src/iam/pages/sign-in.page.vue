@@ -8,6 +8,7 @@ import AdminKeyForm from '../components/admin-key-form.component.vue';
 import SignUpForm from '../components/sign-up-form.component.vue';
 import authService from '../services/auth.service';
 import { useAuthStore } from '../store/auth.store';
+import { resolvePostLoginTarget } from '../../shared/safe-redirect.js';
 
 export default {
   name: 'SignInPage',
@@ -47,20 +48,20 @@ export default {
 
         this.$toast.add({
           severity: 'success',
-          summary: 'Welcome!',
-          detail: `Hello ${response.username}, redirecting to dashboard...`,
+          summary: this.$t('auth.welcome'),
+          detail: this.$t('auth.welcomeDetail', { name: response.username }),
           life: 3000
         });
 
         // Delay navigation to show toast
         setTimeout(() => {
-          this.$router.push('/dashboard');
+          this.$router.push(resolvePostLoginTarget(this.$route.query.redirect));
         }, 1000);
       } catch (error) {
         this.$toast.add({
           severity: 'error',
-          summary: 'Login Failed',
-          detail: error.response?.data?.message || 'Invalid credentials. Please try again.',
+          summary: this.$t('auth.loginFailed'),
+          detail: error.response?.data?.message || this.$t('auth.invalidCredentials'),
           life: 5000
         });
       } finally {
@@ -79,15 +80,15 @@ export default {
         this.currentView = 'sign-up';
         this.$toast.add({
           severity: 'success',
-          summary: 'Access Granted',
-          detail: 'You can now create new users',
+          summary: this.$t('auth.accessGranted'),
+          detail: this.$t('auth.accessGrantedDetail'),
           life: 3000
         });
       } else {
         this.$toast.add({
           severity: 'error',
-          summary: 'Access Denied',
-          detail: 'Invalid admin key',
+          summary: this.$t('auth.accessDenied'),
+          detail: this.$t('auth.invalidAdminKey'),
           life: 3000
         });
       }
@@ -99,8 +100,8 @@ export default {
       if (!userData?.username?.trim() || !userData?.password?.trim()) {
         this.$toast.add({
           severity: 'error',
-          summary: 'Validation Error',
-          detail: 'Username and password are required',
+          summary: this.$t('common.validationError'),
+          detail: this.$t('auth.fillAll'),
           life: 3000
         });
         return;
@@ -114,8 +115,8 @@ export default {
         // Show success toast
         this.$toast.add({
           severity: 'success',
-          summary: 'User Created Successfully! 🎉',
-          detail: `User "${userData.username}" has been created. Redirecting to home...`,
+          summary: this.$t('auth.userCreated'),
+          detail: this.$t('auth.userCreatedDetail', { name: userData.username }),
           life: 4000
         });
 
@@ -127,11 +128,11 @@ export default {
       } catch (error) {
         const errorMessage = error.response?.data?.message ||
             error.response?.data?.title ||
-            'Failed to create user. Please try again.';
+            this.$t('auth.createFailedDetail');
 
         this.$toast.add({
           severity: 'error',
-          summary: 'User Creation Failed',
+          summary: this.$t('auth.createFailed'),
           detail: errorMessage,
           life: 5000
         });
@@ -143,7 +144,7 @@ export default {
     handleError(message) {
       this.$toast.add({
         severity: 'error',
-        summary: 'Error',
+        summary: this.$t('common.error'),
         detail: message,
         life: 3000
       });
@@ -193,7 +194,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, var(--op-bg) 0%, #c3cfe2 100%);
 }
 
 .sign-in-container {

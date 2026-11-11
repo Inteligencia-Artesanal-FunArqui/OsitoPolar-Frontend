@@ -1,6 +1,7 @@
 ﻿
 <script>
 import { EquipmentService } from "../services/equipment.service.js";
+import { normalizeToken } from "../../shared/badge-tokens.js";
 
 /**
  * @component equipment-form
@@ -48,34 +49,18 @@ export default {
         energyConsumptionUnit: 'watts',
         energyConsumptionAverage: 0,
         ownerId: 1,
-        ownerType: 'user',
+        ownerType: 'Owner',
         ownershipType: 'Owned',
         notes: ''
       },
       submitting: false,
       errors: {},
-      typeOptions: [
-        { label: 'Freezer', value: 'Freezer' },
-        { label: 'Cold Room', value: 'ColdRoom' },
-        { label: 'Refrigerator', value: 'Refrigerator' }
-      ],
-      statusOptions: [
-        { label: 'Active', value: 'Active' },
-        { label: 'Inactive', value: 'Inactive' },
-        { label: 'Maintenance', value: 'Maintenance' },
-        { label: 'Out of Service', value: 'OutOfService' }
-      ],
-      ownershipOptions: [
-        { label: 'Owned', value: 'Owned' },
-        { label: 'Rented', value: 'Rented' },
-        { label: 'Leased', value: 'Leased' }
-      ],
       equipmentService: null
     };
   },
   computed: {
     pageTitle() {
-      return this.isEditMode ? 'Edit Equipment' : 'Add New Equipment';
+      return this.isEditMode ? this.$t('equipment.form.editTitle') : this.$t('equipment.form.addTitle');
     }
   },
   watch: {
@@ -124,7 +109,7 @@ export default {
         energyConsumptionUnit: 'watts',
         energyConsumptionAverage: 0,
         ownerId: 1,
-        ownerType: 'user',
+        ownerType: 'Owner',
         ownershipType: 'Owned',
         notes: ''
       };
@@ -143,7 +128,8 @@ export default {
       }
       this.formData = {
         name: equipment.name || '',
-        type: equipment.type || '',
+        // backend sends PascalCase (ColdRoom); older data used snake_case (cold_room)
+        type: ({ freezer: 'Freezer', cold_room: 'ColdRoom', refrigerator: 'Refrigerator' })[normalizeToken(equipment.type)] || equipment.type || '',
         model: equipment.model || '',
         manufacturer: equipment.manufacturer || '',
         serialNumber: equipment.serialNumber || '',
@@ -164,8 +150,8 @@ export default {
         energyConsumptionUnit: equipment.energyConsumptionUnit || 'watts',
         energyConsumptionAverage: equipment.energyConsumptionAverage || 0,
         ownerId: equipment.ownerId || 1,
-        ownerType: equipment.ownerType || 'user',
-        ownershipType: equipment.ownershipType || 'owned',
+        ownerType: equipment.ownerType || 'Owner',
+        ownershipType: equipment.ownershipType || 'Owned',
         notes: equipment.notes || ''
       };
     },
@@ -174,47 +160,47 @@ export default {
       this.errors = {};
 
       if (!this.formData.name?.trim()) {
-        this.errors.name = 'Name is required';
+        this.errors.name = this.$t('equipment.form.errors.name');
       }
 
       if (!this.formData.type) {
-        this.errors.type = 'Type is required';
+        this.errors.type = this.$t('equipment.form.errors.type');
       }
 
       if (this.formData.serialNumber?.trim()) {
         try {
           const existingEquipment = await this.equipmentService.getBySerialNumber(this.formData.serialNumber);
           if (existingEquipment && (!this.isEditMode || existingEquipment.id !== this.equipment?.id)) {
-            this.errors.serialNumber = 'Serial number already exists';
+            this.errors.serialNumber = this.$t('equipment.form.errors.serialExists');
           }
         } catch (error) {
           console.error('Error checking serial number:', error);
-          this.errors.serialNumber = 'Failed to validate serial number';
+          this.errors.serialNumber = this.$t('equipment.form.errors.serialCheck');
         }
       }
 
       if (!this.formData.code?.trim()) {
-        this.errors.code = 'Equipment code is required';
+        this.errors.code = this.$t('equipment.form.errors.code');
       }
 
       if (!this.formData.model?.trim()) {
-        this.errors.model = 'Model is required';
+        this.errors.model = this.$t('equipment.form.errors.model');
       }
 
       if (!this.formData.manufacturer?.trim()) {
-        this.errors.manufacturer = 'Manufacturer is required';
+        this.errors.manufacturer = this.$t('equipment.form.errors.manufacturer');
       }
 
       if (!this.formData.locationName?.trim()) {
-        this.errors.locationName = 'Location name is required';
+        this.errors.locationName = this.$t('equipment.form.errors.locationName');
       }
 
       if (!this.formData.locationAddress?.trim()) {
-        this.errors.locationAddress = 'Location address is required';
+        this.errors.locationAddress = this.$t('equipment.form.errors.locationAddress');
       }
 
       if (this.formData.optimalTemperatureMin >= this.formData.optimalTemperatureMax) {
-        this.errors.optimalTemperature = 'Minimum temperature must be less than maximum temperature';
+        this.errors.optimalTemperature = this.$t('equipment.form.errors.optimalRange');
       }
 
       return Object.keys(this.errors).length === 0;
@@ -229,22 +215,22 @@ export default {
       if (!isValid) {
         this.$toast.add({
           severity: 'error',
-          summary: 'Validation Error',
-          detail: 'Please correct the errors in the form',
+          summary: this.$t('common.validationError'),
+          detail: this.$t('equipment.form.fixErrors'),
           life: 3000
         });
         return;
       }
 
       this.submitting = true;
-      console.log('Preparing equipment data...');
 
       try {
         const equipmentData = {
           ...this.formData,
-          status: 'Active',
-          isPoweredOn: true,
-          installationDate: new Date().toISOString()
+          // editing must not silently reset the unit's current status / power / install date
+          status: this.isEditMode ? (this.equipment?.status || 'Active') : 'Active',
+          isPoweredOn: this.isEditMode ? (this.equipment?.isPoweredOn ?? true) : true,
+          installationDate: this.isEditMode && this.equipment?.installationDate ? this.equipment.installationDate : new Date().toISOString()
         };
 
         this.$emit('save', equipmentData);
@@ -253,14 +239,13 @@ export default {
         console.error('Error preparing equipment data:', error);
         this.$toast.add({
           severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to prepare equipment data',
+          summary: this.$t('common.error'),
+          detail: this.$t('equipment.form.prepareError'),
           life: 5000
         });
       } finally {
         setTimeout(() => {
           this.submitting = false;
-          console.log(' Submit unlocked');
         }, 1000);
       }
     },
@@ -279,21 +264,21 @@ export default {
 <template>
   <div class="equipment-form p-fluid">
     <pv-message v-if="Object.keys(errors).length > 0" severity="error">
-      Please correct the errors in the form
+      {{ $t('equipment.form.fixErrors') }}
     </pv-message>
 
     <div class="form-grid">
       <!-- Basic Information -->
-      <pv-field-set legend="Basic Information">
+      <pv-fieldset :legend="$t('equipment.form.sections.basic')">
         <div class="form-row">
           <div class="form-col">
             <div class="p-field">
-              <label for="name">Name*</label>
+              <label for="name">{{ $t('equipment.form.labels.name') }}</label>
               <pv-input-text
                   id="name"
                   v-model="formData.name"
                   :class="{'p-invalid': errors.name}"
-                  placeholder="Enter equipment name"
+                  :placeholder="$t('equipment.form.placeholders.name')"
               />
               <small v-if="errors.name" class="p-error">{{ errors.name }}</small>
             </div>
@@ -301,17 +286,17 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="type">Type*</label>
+              <label for="type">{{ $t('equipment.form.labels.type') }}</label>
               <select
                   id="type"
                   v-model="formData.type"
                   :class="['custom-select', {'is-invalid': errors.type}]"
                   required
               >
-                <option value="">-- Select Equipment Type --</option>
-                <option value="Freezer">Freezer</option>
-                <option value="ColdRoom">Cold Room</option>
-                <option value="Refrigerator">Refrigerator</option>
+                <option value="">{{ $t('equipment.form.selectType') }}</option>
+                <option value="Freezer">{{ $t('equipment.types.freezer') }}</option>
+                <option value="ColdRoom">{{ $t('equipment.types.cold_room') }}</option>
+                <option value="Refrigerator">{{ $t('equipment.types.refrigerator') }}</option>
               </select>
               <small v-if="errors.type" class="p-error">{{ errors.type }}</small>
             </div>
@@ -319,12 +304,12 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="model">Model*</label>
+              <label for="model">{{ $t('equipment.form.labels.model') }}</label>
               <pv-input-text
                   id="model"
                   v-model="formData.model"
                   :class="{'p-invalid': errors.model}"
-                  placeholder="Enter model number"
+                  :placeholder="$t('equipment.form.placeholders.model')"
               />
               <small v-if="errors.model" class="p-error">{{ errors.model }}</small>
             </div>
@@ -334,12 +319,12 @@ export default {
         <div class="form-row">
           <div class="form-col">
             <div class="p-field">
-              <label for="manufacturer">Manufacturer*</label>
+              <label for="manufacturer">{{ $t('equipment.form.labels.manufacturer') }}</label>
               <pv-input-text
                   id="manufacturer"
                   v-model="formData.manufacturer"
                   :class="{'p-invalid': errors.manufacturer}"
-                  placeholder="Enter manufacturer name"
+                  :placeholder="$t('equipment.form.placeholders.manufacturer')"
               />
               <small v-if="errors.manufacturer" class="p-error">{{ errors.manufacturer }}</small>
             </div>
@@ -347,12 +332,12 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="serialNumber">Serial Number*</label>
+              <label for="serialNumber">{{ $t('equipment.form.labels.serialNumber') }}</label>
               <pv-input-text
                   id="serialNumber"
                   v-model="formData.serialNumber"
                   :class="{'p-invalid': errors.serialNumber}"
-                  placeholder="Enter serial number"
+                  :placeholder="$t('equipment.form.placeholders.serialNumber')"
               />
               <small v-if="errors.serialNumber" class="p-error">{{ errors.serialNumber }}</small>
             </div>
@@ -360,25 +345,25 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="code">Equipment Code*</label>
+              <label for="code">{{ $t('equipment.form.labels.code') }}</label>
               <pv-input-text
                   id="code"
                   v-model="formData.code"
                   :class="{'p-invalid': errors.code}"
-                  placeholder="Enter equipment code"
+                  :placeholder="$t('equipment.form.placeholders.code')"
               />
               <small v-if="errors.code" class="p-error">{{ errors.code }}</small>
             </div>
           </div>
         </div>
-      </pv-field-set>
+      </pv-fieldset>
 
       <!-- Temperature Settings -->
-      <pv-field-set legend="Temperature Settings">
+      <pv-fieldset :legend="$t('equipment.form.sections.temperature')">
         <div class="form-row">
           <div class="form-col">
             <div class="p-field">
-              <label for="currentTemperature">Current Temperature (°C)</label>
+              <label for="currentTemperature">{{ $t('equipment.form.labels.currentTemperature') }}</label>
               <pv-input-number
                   id="currentTemperature"
                   v-model="formData.currentTemperature"
@@ -391,7 +376,7 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="setTemperature">Set Temperature (°C)</label>
+              <label for="setTemperature">{{ $t('equipment.form.labels.setTemperature') }}</label>
               <pv-input-number
                   id="setTemperature"
                   v-model="formData.setTemperature"
@@ -406,7 +391,7 @@ export default {
         <div class="form-row">
           <div class="form-col">
             <div class="p-field">
-              <label for="optimalMin">Optimal Minimum (°C)</label>
+              <label for="optimalMin">{{ $t('equipment.form.labels.optimalMin') }}</label>
               <pv-input-number
                   id="optimalMin"
                   v-model="formData.optimalTemperatureMin"
@@ -420,7 +405,7 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="optimalMax">Optimal Maximum (°C)</label>
+              <label for="optimalMax">{{ $t('equipment.form.labels.optimalMax') }}</label>
               <pv-input-number
                   id="optimalMax"
                   v-model="formData.optimalTemperatureMax"
@@ -433,19 +418,19 @@ export default {
             </div>
           </div>
         </div>
-      </pv-field-set>
+      </pv-fieldset>
 
       <!-- Location Information -->
-      <pv-field-set legend="Location Information">
+      <pv-fieldset :legend="$t('equipment.form.sections.location')">
         <div class="form-row">
           <div class="form-col">
             <div class="p-field">
-              <label for="locationName">Location Name*</label>
+              <label for="locationName">{{ $t('equipment.form.labels.locationName') }}</label>
               <pv-input-text
                   id="locationName"
                   v-model="formData.locationName"
                   :class="{'p-invalid': errors.locationName}"
-                  placeholder="Enter location name"
+                  :placeholder="$t('equipment.form.placeholders.locationName')"
               />
               <small v-if="errors.locationName" class="p-error">{{ errors.locationName }}</small>
             </div>
@@ -453,23 +438,22 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="locationAddress">Address*</label>
+              <label for="locationAddress">{{ $t('equipment.form.labels.locationAddress') }}</label>
               <pv-input-text
                   id="locationAddress"
                   v-model="formData.locationAddress"
                   :class="{'p-invalid': errors.locationAddress}"
-                  placeholder="Enter full address"
+                  :placeholder="$t('equipment.form.placeholders.locationAddress')"
               />
               <small v-if="errors.locationAddress" class="p-error">{{ errors.locationAddress }}</small>
             </div>
           </div>
         </div>
 
-        <!-- ✅ AGREGADO: Coordenadas opcionales -->
         <div class="form-row">
           <div class="form-col">
             <div class="p-field">
-              <label for="locationLatitude">Latitude (Optional)</label>
+              <label for="locationLatitude">{{ $t('equipment.form.labels.latitude') }}</label>
               <pv-input-number
                   id="locationLatitude"
                   v-model="formData.locationLatitude"
@@ -482,7 +466,7 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="locationLongitude">Longitude (Optional)</label>
+              <label for="locationLongitude">{{ $t('equipment.form.labels.longitude') }}</label>
               <pv-input-number
                   id="locationLongitude"
                   v-model="formData.locationLongitude"
@@ -493,14 +477,14 @@ export default {
             </div>
           </div>
         </div>
-      </pv-field-set>
+      </pv-fieldset>
 
       <!-- Energy Information -->
-      <pv-field-set legend="Energy Information">
+      <pv-fieldset :legend="$t('equipment.form.sections.energy')">
         <div class="form-row">
           <div class="form-col">
             <div class="p-field">
-              <label for="energyCurrent">Current Consumption</label>
+              <label for="energyCurrent">{{ $t('equipment.form.labels.energyCurrent') }}</label>
               <pv-input-number
                   id="energyCurrent"
                   v-model="formData.energyConsumptionCurrent"
@@ -511,14 +495,14 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="energyUnit">Energy Unit</label>
+              <label for="energyUnit">{{ $t('equipment.form.labels.energyUnit') }}</label>
               <select
                   id="energyUnit"
                   v-model="formData.energyConsumptionUnit"
                   class="custom-select"
               >
-                <option value="watts">Watts</option>
-                <option value="kw">Kilowatts</option>
+                <option value="watts">W</option>
+                <option value="kw">kW</option>
                 <option value="kwh">kWh</option>
               </select>
             </div>
@@ -526,7 +510,7 @@ export default {
 
           <div class="form-col">
             <div class="p-field">
-              <label for="energyAverage">Average Consumption</label>
+              <label for="energyAverage">{{ $t('equipment.form.labels.energyAverage') }}</label>
               <pv-input-number
                   id="energyAverage"
                   v-model="formData.energyConsumptionAverage"
@@ -535,20 +519,20 @@ export default {
             </div>
           </div>
         </div>
-      </pv-field-set>
+      </pv-fieldset>
 
       <!-- Additional Information -->
-      <pv-field-set legend="Additional Information">
+      <pv-fieldset :legend="$t('equipment.form.sections.additional')">
         <div class="form-row">
           <div class="form-col">
             <div class="p-field">
-              <label for="technicalDetails">Technical Details</label>
+              <label for="technicalDetails">{{ $t('equipment.form.labels.technicalDetails') }}</label>
               <pv-textarea
                   id="technicalDetails"
                   v-model="formData.technicalDetails"
                   rows="3"
                   auto-resize
-                  placeholder="Enter technical specifications..."
+                  :placeholder="$t('equipment.form.placeholders.technicalDetails')"
               />
             </div>
           </div>
@@ -557,30 +541,30 @@ export default {
         <div class="form-row">
           <div class="form-col">
             <div class="p-field">
-              <label for="notes">Notes</label>
+              <label for="notes">{{ $t('equipment.form.labels.notes') }}</label>
               <pv-textarea
                   id="notes"
                   v-model="formData.notes"
                   rows="3"
                   auto-resize
-                  placeholder="Enter additional notes..."
+                  :placeholder="$t('equipment.form.placeholders.notes')"
               />
             </div>
           </div>
         </div>
-      </pv-field-set>
+      </pv-fieldset>
     </div>
 
     <div class="form-footer">
       <pv-button
-          label="Cancel"
+          :label="$t('common.cancel')"
           icon="pi pi-times"
           class="p-button-text"
           @click="cancel"
           :disabled="submitting"
       />
       <pv-button
-          :label="submitting ? 'Creating...' : (isEditMode ? 'Update Equipment' : 'Create Equipment')"
+          :label="submitting ? $t('equipment.form.saving') : (isEditMode ? $t('equipment.form.update') : $t('equipment.form.create'))"
           icon="pi pi-check"
           class="p-button-success"
           @click="submitForm"
@@ -594,8 +578,6 @@ export default {
 <style scoped>
 .equipment-form {
   padding: 1.5rem;
-  background-color: #f8f9fa;
-  min-height: 100vh;
 }
 
 .form-grid {
@@ -679,7 +661,7 @@ export default {
 }
 
 .custom-select.is-invalid {
-  border-color: #dc3545;
+  border-color: var(--op-danger);
   box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.15);
 }
 
@@ -747,13 +729,13 @@ export default {
 
 /* Invalid state styling */
 :deep(.p-invalid) {
-  border-color: #dc3545 !important;
+  border-color: var(--op-danger) !important;
   box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.15) !important;
 }
 
 /* Error styling */
 :deep(.p-error) {
-  color: #dc3545 !important;
+  color: var(--op-danger) !important;
   font-weight: 500 !important;
 }
 
@@ -779,14 +761,14 @@ export default {
 }
 
 :deep(.p-button-text:hover) {
-  background-color: #f8f9fa !important;
+  background-color: var(--op-surface-muted) !important;
   color: #495057 !important;
   border-color: #dee2e6 !important;
 }
 
 :deep(.p-button-success) {
-  background-color: #28a745 !important;
-  border-color: #28a745 !important;
+  background-color: var(--op-success) !important;
+  border-color: var(--op-success) !important;
   color: white !important;
 }
 

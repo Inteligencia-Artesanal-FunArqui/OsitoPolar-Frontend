@@ -34,12 +34,12 @@ export default {
       }
 
       if (this.newUser.password !== this.newUser.confirmPassword) {
-        this.$emit('error', 'Passwords do not match');
+        this.$emit('error', this.$t('auth.passwordMismatch'));
         return;
       }
 
       if (!this.isFormValid) {
-        this.$emit('error', 'Please fill all fields');
+        this.$emit('error', this.$t('auth.fillAll'));
         return;
       }
 
@@ -67,8 +67,8 @@ export default {
 <template>
   <form @submit.prevent="handleSubmit" class="sign-up-form">
     <div class="text-center mb-3">
-      <i class="pi pi-user-plus" style="font-size: 3rem; color: #0079c2;"></i>
-      <h3>Create New User</h3>
+      <i class="pi pi-user-plus" style="font-size: 3rem; color: var(--op-brand);"></i>
+      <h3>{{ $t('auth.createTitle') }}</h3>
     </div>
 
     <div class="field">
@@ -77,7 +77,7 @@ export default {
             id="newUsername"
             v-model="newUser.username"
             class="w-full" />
-        <label for="newUsername">Username</label>
+        <label for="newUsername">{{ $t('auth.username') }}</label>
       </pv-float-label>
     </div>
 
@@ -88,7 +88,7 @@ export default {
             v-model="newUser.password"
             type="password"
             class="w-full" />
-        <label for="newPassword">Password</label>
+        <label for="newPassword">{{ $t('auth.password') }}</label>
       </pv-float-label>
     </div>
 
@@ -99,13 +99,13 @@ export default {
             v-model="newUser.confirmPassword"
             type="password"
             class="w-full" />
-        <label for="confirmPassword">Confirm Password</label>
+        <label for="confirmPassword">{{ $t('auth.confirmPassword') }}</label>
       </pv-float-label>
     </div>
 
     <pv-button
         type="submit"
-        label="Create User"
+        :label="$t('auth.createButton')"
         icon="pi pi-user-plus"
         :loading="loading"
         :disabled="loading || !isFormValid"
@@ -113,7 +113,7 @@ export default {
 
     <pv-button
         type="button"
-        label="Back to Sign In"
+        :label="$t('auth.backToSignIn')"
         icon="pi pi-arrow-left"
         class="p-button-text w-full"
         @click="handleBack" />

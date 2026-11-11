@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 /**
  * @component equipment-analytics
  * @description Page component for displaying detailed equipment analytics
@@ -11,6 +11,7 @@ import LocationMapComponent from "../../analytics/components/location-map.compon
 import { AnalyticsService} from "../services/analytics.service.js";
 import { EquipmentService} from "../../equipment/services/equipment.service.js";
 import httpInstance from "../../shared/http.instance.js";
+import { Equipment } from "../../equipment/models/equipment.entity.js";
 
 export default {
   name: 'equipment-analytics',
@@ -76,7 +77,6 @@ export default {
      * IMPROVED: Each section loads independently, failures don't break the whole page
      */
     async loadAll() {
-      console.log('Loading analytics data for equipment:', this.equipmentId);
 
       this.loading = true;
       this.hasError = false;
@@ -90,8 +90,7 @@ export default {
         // 1) Load all equipment for the map (independent)
         try {
           const allEquipmentResponse = await httpInstance.get('/equipments');
-          this.allEquipment = allEquipmentResponse.data;
-          console.log('📍 All equipment loaded for map:', this.allEquipment.length, 'items');
+          this.allEquipment = allEquipmentResponse.data.map(item => new Equipment(item));
         } catch (error) {
           console.warn('⚠️ Could not load equipment list for map:', error.message);
           this.allEquipment = [];
@@ -100,11 +99,10 @@ export default {
         // 2) Load specific equipment details (critical)
         try {
           this.equipment = await this.equipmentService.getEquipmentById(this.equipmentId);
-          console.log('🔧 Equipment details loaded:', this.equipment.name);
         } catch (error) {
           console.error(' Could not load equipment details:', error.message);
           this.hasError = true;
-          this.errorMessage = `Equipment ${this.equipmentId} not found`;
+          this.errorMessage = this.$t('analytics.notFound', { id: this.equipmentId });
           this.loading = false;
           return; // Exit early if equipment doesn't exist
         }
@@ -126,10 +124,8 @@ export default {
               timestamp: reading.timestamp,
               status: reading.status || 'normal'
             }));
-            console.log('Temperature readings loaded:', this.readings.length, 'items');
           } else {
             this.readings = [];
-            console.log('ℹ No temperature readings available');
           }
         } catch (error) {
           console.warn(' Could not load temperature readings:', error.message);
@@ -153,10 +149,8 @@ export default {
               timestamp: reading.timestamp,
               status: reading.status || 'normal'
             }));
-            console.log('⚡ Energy readings loaded:', this.energyReadings.length, 'items');
           } else {
             this.energyReadings = [];
-            console.log('ℹNo energy readings available');
           }
         } catch (error) {
           console.warn('Could not load energy readings:', error.message);
@@ -179,12 +173,10 @@ export default {
               minTemperature: summary.minTemperature,
               maxTemperature: summary.maxTemperature
             }));
-            console.log('Daily averages loaded:', this.dailyAverages.length, 'items');
             this.summariesAvailable = true;
           } else {
             this.dailyAverages = [];
             this.summariesAvailable = false;
-            console.log('ℹ No daily summaries available');
           }
         } catch (error) {
           console.warn(' Daily summaries not available:', error.message);
@@ -201,13 +193,12 @@ export default {
         if (this.energyReadings?.length > 0) loadedFeatures.push('energy');
         if (this.dailyAverages.length > 0) loadedFeatures.push('summaries');
 
-        console.log(`🎉 Analytics loaded successfully! Available: [${loadedFeatures.join(', ')}]`);
 
       } catch (error) {
         console.error(' Unexpected error loading analytics:', error);
         this.loading = false;
         this.hasError = true;
-        this.errorMessage = `Unexpected error: ${error.message}`;
+        this.errorMessage = this.$t('analytics.unexpectedError');
       }
     }
   },
@@ -221,54 +212,39 @@ export default {
 
 <template>
   <div class="analytics-page">
-    <div class="page-header">
-      <h1 class="page-title">{{ equipment ? equipment.name : 'Equipment' }} Analytics</h1>
-      <router-link
-          :to="{ name: 'equipment-detail', params: { id: equipmentId }}"
-          class="back-button"
-      >
-        <i class="pi pi-arrow-left"></i>
-        Back to Equipment Control
-      </router-link>
-    </div>
+    <op-page-header
+        :title="$t('analytics.title', { name: equipment ? equipment.name : $t('equipment.equipment') })"
+        :subtitle="$t('analytics.subtitle')"
+        :back-to="{ name: 'equipment-detail', params: { id: equipmentId } }"
+        :back-label="$t('analytics.back')" />
 
-    <div class="loading-container" v-if="loading">
-      <pv-progress-spinner />
-      <p>Loading analytics data...</p>
-    </div>
-
-    <div class="error-container" v-else-if="hasError">
-      <p class="error-message">{{ errorMessage }}</p>
-      <pv-button label="Try Again" @click="loadAll" class="p-button-primary" />
-    </div>
+    <op-loading-state v-if="loading" :label="$t('analytics.loading')" />
+    <op-error-state v-else-if="hasError" :message="errorMessage" @retry="loadAll" />
 
     <div v-else class="analytics-content">
-      <!-- Summary cards section -->
       <div class="summary-section">
         <div class="summary-card">
-          <div class="summary-label">Current Temperature</div>
+          <div class="summary-label">{{ $t('analytics.currentTemperature') }}</div>
           <div class="summary-value" :class="{ 'negative-temp': equipment.currentTemperature < 0 }">
             {{ equipment.currentTemperature.toFixed(1) }}°C
           </div>
-          <div class="summary-status" :class="'status-' + equipment.getTemperatureStatus()">
-            {{ equipment.getTemperatureStatus().toUpperCase() }}
-          </div>
+          <op-status-badge kind="temperature" :value="equipment.getTemperatureStatus()" />
         </div>
 
         <div class="summary-card">
-          <div class="summary-label">Set Temperature</div>
+          <div class="summary-label">{{ $t('analytics.setTemperature') }}</div>
           <div class="summary-value" :class="{ 'negative-temp': equipment.setTemperature < 0 }">
             {{ equipment.setTemperature.toFixed(1) }}°C
           </div>
           <div class="summary-info">
-            Optimal: {{ optimalRange.min.toFixed(1) }}°C - {{ optimalRange.max.toFixed(1) }}°C
+            {{ $t('equipment.control.optimalRange') }}: {{ optimalRange.min.toFixed(1) }}°C - {{ optimalRange.max.toFixed(1) }}°C
           </div>
         </div>
 
         <div class="summary-card">
-          <div class="summary-label">Power Status</div>
+          <div class="summary-label">{{ $t('analytics.powerStatus') }}</div>
           <div class="summary-value power-status" :class="{ 'on': equipment.isPoweredOn }">
-            {{ equipment.isPoweredOn ? 'ON' : 'OFF' }}
+            {{ equipment.isPoweredOn ? $t('equipment.control.on') : $t('equipment.control.off') }}
           </div>
           <div class="summary-info">
             {{ equipment.energyConsumption.current }} {{ equipment.energyConsumption.unit }}
@@ -276,11 +252,9 @@ export default {
         </div>
       </div>
 
-      <!-- Charts grid - first row -->
       <div class="analytics-grid">
-        <!-- Temperature Gauge -->
         <div class="analytics-card">
-          <h2 class="card-title">Temperature Gauge</h2>
+          <h2 class="card-title">{{ $t('analytics.gauge') }}</h2>
           <temperature-gauge-component
               :value="equipment.currentTemperature"
               :optimal-min="optimalRange.min"
@@ -288,23 +262,20 @@ export default {
           />
         </div>
 
-        <!-- Temperature Chart -->
         <div class="analytics-card">
-          <h2 class="card-title">Temperature Over Time (24h)</h2>
+          <h2 class="card-title">{{ $t('analytics.overTime') }}</h2>
           <temperature-chart-component :readings="readings" />
         </div>
       </div>
 
-      <!-- Charts grid - second row -->
       <div class="analytics-grid">
-        <!-- Temperature History -->
         <div class="analytics-card">
-          <h2 class="card-title">Daily Temperature Averages (7d)</h2>
+          <h2 class="card-title">{{ $t('analytics.dailyAverages') }}</h2>
           <temperature-history-component :daily-averages="dailyAverages" />
         </div>
 
         <div class="analytics-card">
-          <h2 class="card-title">Equipment Location</h2>
+          <h2 class="card-title">{{ $t('analytics.location') }}</h2>
           <location-map-component
               :equipment="allEquipment"
               :selected-id="parseInt(equipmentId)"
@@ -315,55 +286,11 @@ export default {
   </div>
 </template>
 
-
 <style scoped>
 .analytics-page {
   padding: 1rem;
   max-width: 1400px;
   margin: 0 auto;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.page-title {
-  margin: 0;
-  color: #0079c2;
-  font-size: 2rem;
-}
-
-.back-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  color: #555;
-  font-size: 1rem;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.back-button:hover {
-  background-color: #f0f0f0;
-}
-
-.loading-container, .error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  gap: 1rem;
-}
-
-.error-message {
-  color: #e74c3c;
-  font-size: 1.1rem;
 }
 
 .summary-section {
@@ -385,8 +312,8 @@ export default {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  min-width: 250px;
-  max-width: 300px;
+  min-width: 0;
+  max-width: none;
 }
 
 .summary-label {
@@ -455,6 +382,7 @@ export default {
 }
 
 .analytics-card {
+  min-width: 0;
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
@@ -484,7 +412,7 @@ export default {
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .analytics-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr); /* minmax(0,..) lets the chart canvas shrink instead of stretching the grid */
     max-width: 800px;
   }
 
@@ -517,7 +445,7 @@ export default {
   }
 
   .analytics-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr); /* minmax(0,..) lets the chart canvas shrink instead of stretching the grid */
     gap: 1rem;
   }
 

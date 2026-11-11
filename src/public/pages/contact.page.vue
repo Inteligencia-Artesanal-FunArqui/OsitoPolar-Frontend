@@ -12,7 +12,7 @@ export default {
 </script>
 <template>
   <div class="contact-page">
-    <h1>{{ $t('contact.title') }}</h1>
+    <op-page-header :title="$t('contact.title')" :subtitle="$t('contact.subtitle')" />
 
     <div class="contact-container">
       <contact-info />
@@ -23,28 +23,12 @@ export default {
 
 
 <style scoped>
-.contact-page {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
+.contact-page { max-width: 1100px; margin: 0 auto; }
 
 .contact-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
-  margin-top: 2rem;
-}
-
-h1 {
-  color: #0079c2;
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-@media (max-width: 768px) {
-  .contact-container {
-    flex-direction: column;
-  }
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: var(--op-space-6);
+  align-items: start;
 }
 </style>

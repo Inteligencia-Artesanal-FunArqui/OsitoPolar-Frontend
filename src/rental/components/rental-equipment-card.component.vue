@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 export default {
   name: 'rental-equipment-card',
   props: {
@@ -9,19 +9,17 @@ export default {
   },
   computed: {
     formattedPrice() {
-      return `${this.equipment.monthlyPrice} ${this.equipment.currency} / ${this.$t('rental.configuration.month')}`;
+      return `${this.equipment.currency} ${this.equipment.monthlyPrice} / ${this.$t('rental.perMonth')}`;
     },
     equipmentImage() {
-      return this.equipment.imageUrl ;
+      return this.equipment.imageUrl || '';
     }
   },
+  emits: ['request-rental'],
   methods: {
     handleRequestRental() {
+      // the catalog page owns navigation to the checkout
       this.$emit('request-rental', this.equipment);
-      this.$router.push({
-        name: 'rental-checkout',
-        params: { equipmentId: this.equipment.id }
-      });
     }
   }
 }
@@ -30,11 +28,8 @@ export default {
 <template>
   <div class="rental-card">
     <div class="rental-card-image">
-      <img
-          :src="equipmentImage"
-          :alt="equipment.name"
-          @error="$event.target.src=''"
-      />
+      <img v-if="equipmentImage" :src="equipmentImage" :alt="equipment.name" />
+      <i v-else class="pi pi-box rental-card-placeholder" aria-hidden="true"></i>
       <div class="availability-badge" v-if="equipment.stock > 0">
         {{ $t('rental.catalog.available') }}
       </div>
@@ -52,7 +47,7 @@ export default {
       <pv-button
           :label="$t('rental.catalog.request')"
           @click="handleRequestRental"
-          class="p-button-success request-button"
+          class="request-button"
           :disabled="equipment.stock === 0"
       />
     </div>
@@ -82,7 +77,7 @@ export default {
 .rental-card-image img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* the demo SVGs are 4:3 illustrations: fill the frame */
 }
 
 .availability-badge {
@@ -134,5 +129,15 @@ export default {
 
 .request-button {
   width: 100%;
+}
+
+.rental-card-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 3rem;
+  color: var(--op-brand);
+  opacity: 0.4;
 }
 </style>

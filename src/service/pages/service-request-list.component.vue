@@ -3,6 +3,7 @@ import { ServiceRequestService } from "../services/service-request.service.js";
 import { EquipmentService } from "../../equipment/services/equipment.service.js";
 import ServiceRequestDetailComponent from "../components/service-request/service-request-detail.component.vue";
 import RatingDialog from "../components/rating/rating-dialog.component.vue";
+import { formatDateTime } from "../../shared/format.js";
 
 export default {
   name: "service-request-list",
@@ -38,8 +39,10 @@ export default {
           this.equipmentService.getAllEquipments()
         ]);
 
-        this.serviceRequests = this.serviceRequestService.mapServiceRequests(requestsResponse.data || []);
-        this.equipmentList = equipmentResponse.data || [];
+        // newest first: the API returns insertion order
+        this.serviceRequests = this.serviceRequestService.mapServiceRequests(requestsResponse.data || [])
+            .sort((a, b) => String(b.requestTime).localeCompare(String(a.requestTime)));
+        this.equipmentList = equipmentResponse || [];
         this.loading = false;
       } catch (error) {
         console.error("Error loading data:", error);
@@ -50,11 +53,8 @@ export default {
     },
 
     getEquipmentDisplay(equipmentId) {
-      if (!this.equipmentList || this.equipmentList.length === 0) {
-        return `Equipment ID: ${equipmentId}`;
-      }
       const match = this.equipmentList.find(eq => String(eq.id) === String(equipmentId));
-      return match ? `${match.name} (${match.code || 'No code'})` : `Equipment ID: ${equipmentId}`;
+      return match ? `${match.name} (${match.code || this.$t('common.noCode')})` : `${this.$t('equipment.equipmentId')}: ${equipmentId}`;
     },
 
     getLocationDisplay(equipmentId) {
@@ -66,21 +66,14 @@ export default {
     },
 
     formatDate(date) {
-      if (!date) return this.$t('service.notScheduled');
-      return new Date(date).toLocaleString('es-PE', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      return formatDateTime(date, this.$i18n.locale) || this.$t('service.notScheduled');
     },
 
     viewRequestDetail(request) {
       this.selectedRequest = request;
       const equipment = this.equipmentList.find(e => String(e.id) === String(request.equipmentId));
-      this.selectedEquipmentDisplay = equipment ? `${equipment.name} (${equipment.code || 'No code'})` : `Equipment ID: ${request.equipmentId}`;
-      this.selectedLocationDisplay = equipment?.location?.name || "Not specified";
+      this.selectedEquipmentDisplay = this.getEquipmentDisplay(request.equipmentId);
+      this.selectedLocationDisplay = this.getLocationDisplay(request.equipmentId);
       this.showDetailModal = true;
     },
 
@@ -90,7 +83,7 @@ export default {
 
     openRatingForm(request) {
       this.selectedRequest = request;
-      this.ratingValue = request.rating || 0;
+      this.ratingValue = request.customerFeedbackRating || 0;
       this.showRatingDialog = true;
     },
 
@@ -117,7 +110,6 @@ export default {
 
     async submitRating(rating) {
       try {
-        // Usar el endpoint específico para agregar calificación
         await this.serviceRequestService.addFeedback(this.selectedRequest.id, rating);
 
         this.$toast.add({
@@ -149,92 +141,63 @@ export default {
 
 <template>
   <div class="service-request-list">
-    <div class="page-header">
-      <h1>{{ $t('service.title') }}</h1>
-      <pv-button
-          :label="$t('service.newRequest')"
-          icon="pi pi-plus"
-          class="p-button-primary new-request-button"
-          @click="openNewRequestForm"
-      />
-    </div>
+    <op-page-header :title="$t('service.title')" :subtitle="$t('service.subtitle')">
+      <pv-button :label="$t('service.newRequest')" icon="pi pi-plus" @click="openNewRequestForm" />
+    </op-page-header>
 
-    <div class="loading-state" v-if="loading">
-      <pv-progress-spinner />
-      <p>{{ $t('service.loading') }}</p>
-    </div>
+    <op-loading-state v-if="loading" :label="$t('service.loading')" />
+    <op-error-state v-else-if="hasError" :message="errorMessage" @retry="loadRequests" />
+    <op-empty-state
+        v-else-if="serviceRequests.length === 0"
+        icon="pi pi-wrench"
+        :title="$t('service.emptyTitle')"
+        :message="$t('service.emptyMessage')">
+      <pv-button :label="$t('service.newRequest')" icon="pi pi-plus" @click="openNewRequestForm" />
+    </op-empty-state>
 
-    <div class="error-state" v-else-if="hasError">
-      <p>{{ errorMessage }}</p>
-      <pv-button :label="$t('service.retry')" @click="loadRequests" />
-    </div>
+    <div class="op-grid" v-else>
+      <article v-for="req in serviceRequests" :key="req.id" class="op-card request-card">
+        <header class="request-card__head">
+          <div class="request-card__equipment">
+            <i class="pi pi-box" aria-hidden="true"></i>
+            <strong>{{ getEquipmentDisplay(req.equipmentId) }}</strong>
+          </div>
+          <op-status-badge kind="requestStatus" :value="req.status" />
+        </header>
 
-    <div class="request-grid" v-else>
-      <pv-card
-          v-for="req in serviceRequests"
-          :key="req.id"
-          class="request-card"
-      >
-        <template #title>
-          <div class="card-title-content">
-            <i class="pi pi-box"></i>
-            <strong>{{ $t('service.equipment') }}:</strong>
-            <span>{{ getEquipmentDisplay(req.equipmentId) }}</span>
+        <p class="request-card__title">{{ req.title }}</p>
+
+        <dl class="request-card__facts">
+          <div><dt><i class="pi pi-map-marker" aria-hidden="true"></i> {{ $t('service.location') }}</dt><dd>{{ getLocationDisplay(req.equipmentId) }}</dd></div>
+          <div><dt><i class="pi pi-clock" aria-hidden="true"></i> {{ $t('service.requestedOn') }}</dt><dd>{{ formatDate(req.requestTime) }}</dd></div>
+          <div><dt><i class="pi pi-calendar" aria-hidden="true"></i> {{ $t('service.scheduledFor') }}</dt><dd>{{ formatDate(req.scheduledDate) }}</dd></div>
+          <div><dt><i class="pi pi-cog" aria-hidden="true"></i> {{ $t('service.serviceType') }}</dt><dd><op-status-badge kind="serviceType" :value="req.serviceType" /></dd></div>
+          <div><dt><i class="pi pi-tag" aria-hidden="true"></i> {{ $t('service.priority') }}</dt><dd><op-status-badge kind="priority" :value="req.priority" /></dd></div>
+          <div v-if="req.customerFeedbackRating">
+            <dt><i class="pi pi-star-fill" aria-hidden="true"></i> {{ $t('client.rating.yourRating') }}</dt>
+            <dd>{{ req.customerFeedbackRating }} / 5</dd>
           </div>
-        </template>
-        <template #subtitle>
-          <div class="card-subtitle-content">
-            <span class="pi pi-info-circle"></span>
-            <span>{{ $t('service.status') }}:</span>
-            <span :class="['status-badge', req.getStatusBadgeClass()]">
-              {{ $t(`service.status.${req.status}`) }}
-            </span>
-          </div>
-        </template>
-        <template #content>
-          <div class="card-details">
-            <p class="detail-item"><i class="pi pi-map-marker"></i> <strong>{{ $t('service.location') }}:</strong> {{ getLocationDisplay(req.equipmentId) }}</p>
-            <p class="detail-item"><i class="pi pi-clock"></i> <strong>{{ $t('service.requestedOn') }}:</strong> {{ formatDate(req.requestTime) }}</p>
-            <p class="detail-item"><i class="pi pi-calendar"></i> <strong>{{ $t('service.scheduledFor') }}:</strong> {{ formatDate(req.scheduledDate) }}</p>
-            <p class="detail-item"><i class="pi pi-cog"></i> <strong>{{ $t('service.serviceType') }}:</strong> {{ req.serviceType }}</p>
-            <p class="detail-item" v-if="req.status === 'completed' && req.customerFeedbackRating">
-              <strong>{{ $t('client.rating.yourRating') }}:</strong>
-              {{ req.customerFeedbackRating }} / 5
-            </p>
-          </div>
-        </template>
-        <template #footer>
-          <div class="card-actions">
-            <pv-button
-                :label="$t('common.viewDetails')"
-                icon="pi pi-eye"
-                class="p-button-outlined p-button-sm p-button-secondary-outline"
-                @click="viewRequestDetail(req)"
-            />
-            <pv-button
-                v-if="req.status === 'resolved' && !req.customerFeedbackRating"
-                :label="$t('client.rating.rateService')"
-                icon="pi pi-star"
-                class="p-button-warning p-button-sm p-button-rate"
-                @click="openRatingForm(req)"
-            />
-            <pv-button
-                v-if="req.status === 'pending' || req.status === 'accepted'"
-                :label="$t('service.cancel')"
-                icon="pi pi-times"
-                class="p-button-danger p-button-sm"
-                @click="cancelRequest(req)"
-            />
-            <pv-button
-                v-if="req.status === 'completed' && req.rating"
-                :label="$t('client.rating.viewRating')"
-                icon="pi pi-star-fill"
-                class="p-button-secondary p-button-sm p-button-view-rating"
-                disabled
-            />
-          </div>
-        </template>
-      </pv-card>
+        </dl>
+
+        <footer class="request-card__actions">
+          <pv-button :label="$t('common.viewDetails')" icon="pi pi-eye" size="small" outlined @click="viewRequestDetail(req)" />
+          <pv-button
+              v-if="req.status === 'resolved' && !req.customerFeedbackRating"
+              :label="$t('client.rating.rateService')"
+              icon="pi pi-star"
+              size="small"
+              severity="warn"
+              @click="openRatingForm(req)" />
+          <pv-button
+              v-if="req.status === 'pending' || req.status === 'accepted'"
+              :label="$t('service.cancel')"
+              icon="pi pi-times"
+              size="small"
+              severity="danger"
+              text
+              @click="cancelRequest(req)" />
+        </footer>
+      </article>
     </div>
 
     <ServiceRequestDetailModal
@@ -255,208 +218,15 @@ export default {
 </template>
 
 <style scoped>
-.service-request-list {
-  padding: 1.5rem;
-  background-color: #f8f9fa;
-  min-height: calc(100vh - 60px);
-}
-
-.page-header {
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e0e7eb;
-}
-
-h1 {
-  font-size: 2rem;
-  color: #055f84;
-  font-weight: 700;
-}
-
-.loading-state,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  min-height: 200px;
-  color: #6c757d;
-  font-size: 1.1rem;
-  text-align: center;
-}
-
-.request-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.request-card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  cursor: default;
-}
-
-.request-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.request-card ::v-deep .p-card-title {
-  padding: 1rem 1.5rem 0.5rem;
-  font-size: 1.1rem;
-  color: #34495e;
-  font-weight: 600;
-}
-
-.card-title-content {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.card-title-content i {
-  color: #0884c4;
-  font-size: 1.25rem;
-}
-
-.request-card ::v-deep .p-card-subtitle {
-  padding: 0 1.5rem 1rem;
-  font-size: 0.9rem;
-  color: #7f8c8d;
-}
-
-.card-subtitle-content {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.card-subtitle-content i {
-  color: #95a5a6;
-  font-size: 1rem;
-}
-
-/* Status Badge inside subtitle */
-.status-badge {
-  padding: 0.25rem 0.6rem;
-  border-radius: 15px;
-  font-weight: bold;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: white;
-  margin-left: 0.5rem;
-}
-
-.status-pending { background-color: #f39c12; }
-.status-accepted { background-color: #1abc9c; }
-.status-in-progress { background-color: #3498db; }
-.status-resolved { background-color: #2ecc71; }
-.status-rejected { background-color: #e74c3c; }
-.status-completed { background-color: #50bb0e; }
-
-
-.request-card ::v-deep .p-card-content {
-  padding: 0 1.5rem 1rem;
-}
-
-.card-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.95rem;
-  color: #555;
-}
-
-.detail-item i {
-  color: #95a5a6;
-  font-size: 1rem;
-}
-
-.detail-item strong {
-  color: #333;
-}
-
-.request-card ::v-deep .p-card-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e0e7eb;
-  background-color: #fcfcfc;
-}
-
-.card-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.p-button-sm {
-  padding: 0.55rem 1.1rem;
-  font-size: 0.85rem;
-  border-radius: 8px;
-}
-
-.p-button-secondary-outline {
-  background-color: transparent !important;
-  color: #0884c4 !important;
-  border: 1px solid #0884c4 !important;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-.p-button-secondary-outline:hover {
-  background-color: #e0f2fe !important;
-  color: #055f84 !important;
-  border-color: #055f84 !important;
-}
-
-.p-button-rate {
-  background-color: #ffc107 !important;
-  border-color: #ffc107 !important;
-  color: #333 !important;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.4);
-  transition: all 0.2s ease;
-}
-.p-button-rate:hover {
-  background-color: #e0a800 !important;
-  border-color: #e0a800 !important;
-  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.5);
-}
-
-.p-button-view-rating {
-  background-color: #e9ecef !important;
-  border-color: #e9ecef !important;
-  color: #6c757d !important;
-  font-weight: 500;
-  cursor: not-allowed;
-}
-
-.new-request-button {
-  background-color: #0884c4;
-  border: none;
-  font-weight: bold;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.2s ease;
-}
-
-.new-request-button:hover {
-  background-color: #056a9d;
-}
+.request-card { display: flex; flex-direction: column; gap: var(--op-space-3); transition: box-shadow 0.2s ease, transform 0.2s ease; }
+.request-card:hover { box-shadow: var(--op-shadow-md); transform: translateY(-2px); }
+.request-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--op-space-3); }
+.request-card__equipment { display: flex; gap: var(--op-space-2); align-items: flex-start; color: var(--op-text-strong); min-width: 0; }
+.request-card__equipment i { color: var(--op-brand); margin-top: 0.2rem; }
+.request-card__title { color: var(--op-text-muted); font-size: 0.92rem; }
+.request-card__facts { display: grid; gap: var(--op-space-2); margin: 0; }
+.request-card__facts > div { display: flex; justify-content: space-between; align-items: center; gap: var(--op-space-3); font-size: 0.9rem; }
+.request-card__facts dt { color: var(--op-text-muted); display: flex; gap: var(--op-space-2); align-items: center; }
+.request-card__facts dd { margin: 0; text-align: right; color: var(--op-text-strong); }
+.request-card__actions { margin-top: auto; padding-top: var(--op-space-3); border-top: 1px solid var(--op-border); display: flex; flex-wrap: wrap; gap: var(--op-space-2); }
 </style>

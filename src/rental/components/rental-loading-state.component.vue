@@ -1,10 +1,10 @@
-﻿<script>
+<script>
 export default {
   name: 'rental-loading-state',
   props: {
     message: {
       type: String,
-      default: 'Loading...'
+      default: ''
     }
   }
 }
@@ -13,7 +13,7 @@ export default {
 <template>
   <div class="loading-state">
     <div class="loading-spinner"></div>
-    <p>{{ message }}</p>
+    <p>{{ message || $t('state.loading') }}</p>
   </div>
 </template>
 
@@ -30,8 +30,8 @@ export default {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e1e8ed;
-  border-top: 3px solid #0079c2;
+  border: 3px solid var(--op-border);
+  border-top: 3px solid var(--op-brand);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;

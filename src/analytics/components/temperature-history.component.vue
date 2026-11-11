@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 import {TemperatureFormattingService} from "../services/temperature-formatting.service.js";
 
 /**
@@ -30,10 +30,10 @@ export default {
 
       return {
         labels: sortedAverages.map(avg =>
-            TemperatureFormattingService.getDayName(avg.date)
+            TemperatureFormattingService.getDayName(avg.date, this.$i18n.locale)
         ),
         datasets: [{
-          label: 'Average Temperature',
+          label: this.$t('dashboard.averageTemperature'),
           data: sortedAverages.map(avg => avg.averageTemperature),
           backgroundColor: '#2196F3',
           borderRadius: 5

@@ -1,6 +1,7 @@
-﻿<script>
+<script>
 import { EquipmentService } from '../../equipment/services/equipment.service.js';
 import { RentalCatalogService } from '../../rental/services/rental-catalog.service.js';
+import { equipmentTypeKey } from '../../shared/badge-tokens.js';
 
 export default {
   name: 'home-dashboard-summary',
@@ -37,7 +38,7 @@ export default {
     async loadRentalEquipment() {
       try {
         this.loadingRentalEquipment = true;
-        this.userEquipment = await this.equipmentService.getAllEquipments();
+        const response = await this.rentalService.getAllRentalEquipment();
         this.rentalEquipment = this.rentalService.mapRentalEquipment(response.data);
       } catch (error) {
         console.error('Error loading rental equipment:', error);
@@ -55,12 +56,12 @@ export default {
     },
 
     getEquipmentImage(equipment) {
-      return equipment.imageUrl || '/placeholder-equipment.png';
+      return equipment.imageUrl || '';
     },
 
     getEquipmentTypeLabel(type) {
-      // Use i18n for equipment types
-      return this.$t(`equipment.types.${type}`) || type;
+      const key = equipmentTypeKey(type);
+      return this.$te(key) ? this.$t(key) : (type || '');
     }
   },
   created() {
@@ -76,7 +77,7 @@ export default {
   <div class="home-dashboard-summary">
     <!-- My Equipment Section -->
     <div class="equipment-section">
-      <div class="section-header" @click="goToMyEquipment">
+      <div class="section-header" role="link" tabindex="0" @click="goToMyEquipment" @keydown.enter="goToMyEquipment">
         <h2 class="section-title">{{ $t('home.dashboard.myEquipment') }}</h2>
         <i class="pi pi-arrow-right"></i>
       </div>
@@ -103,10 +104,11 @@ export default {
           >
             <div class="card-image">
               <img
+                  v-if="getEquipmentImage(equipment)"
                   :src="getEquipmentImage(equipment)"
                   :alt="equipment.name"
-                  @error="$event.target.src=''"
               />
+              <i v-else class="pi pi-box card-image__placeholder" aria-hidden="true"></i>
               <div class="status-indicator" :class="equipment.getTemperatureStatus()"></div>
             </div>
             <div class="card-content">
@@ -123,7 +125,7 @@ export default {
 
     <!-- Rental Equipment Section -->
     <div class="equipment-section">
-      <div class="section-header" @click="goToRentalCatalog">
+      <div class="section-header" role="link" tabindex="0" @click="goToRentalCatalog" @keydown.enter="goToRentalCatalog">
         <h2 class="section-title">{{ $t('home.dashboard.rentEquipment') }}</h2>
         <i class="pi pi-arrow-right"></i>
       </div>
@@ -147,10 +149,11 @@ export default {
           >
             <div class="card-image">
               <img
+                  v-if="getEquipmentImage(equipment)"
                   :src="getEquipmentImage(equipment)"
                   :alt="equipment.name"
-                  @error="$event.target.src=''"
               />
+              <i v-else class="pi pi-box card-image__placeholder" aria-hidden="true"></i>
               <div class="availability-badge" v-if="equipment.isAvailable">
                 {{ $t('home.dashboard.available') }}
               </div>
@@ -159,8 +162,8 @@ export default {
               <h3 class="equipment-name">{{ equipment.name }}</h3>
               <p class="equipment-model">{{ equipment.model }}</p>
               <div class="price-info">
-                <span class="price">{{ equipment.monthlyPrice }} {{ equipment.currency }}</span>
-                <span class="period">/ {{ $t('rental.configuration.month').split('|')[0].trim() }}</span>
+                <span class="price">{{ equipment.currency }} {{ equipment.monthlyPrice }}</span>
+                <span class="period">/ {{ $t('rental.perMonth') }}</span>
               </div>
             </div>
           </div>
@@ -195,20 +198,20 @@ export default {
 }
 
 .section-header:hover {
-  border-bottom-color: #0079c2;
+  border-bottom-color: var(--op-brand);
 }
 
 .section-header:hover .section-title {
-  color: #0079c2;
+  color: var(--op-brand);
 }
 
 .section-header:hover i {
   transform: translateX(5px);
-  color: #0079c2;
+  color: var(--op-brand);
 }
 
 .section-title {
-  color: #0079c2;
+  color: var(--op-brand);
   font-size: 2rem;
   font-weight: 600;
   margin: 0;
@@ -244,13 +247,13 @@ export default {
 .equipment-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  border-color: #0079c2;
+  border-color: var(--op-brand);
 }
 
 .card-image {
   position: relative;
   height: 200px;
-  background: #f8f9fa;
+  background: var(--op-surface-muted);
   overflow: hidden;
 }
 
@@ -325,7 +328,7 @@ export default {
 .current-temp {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #0079c2;
+  color: var(--op-brand);
 }
 
 .price-info {
@@ -389,7 +392,7 @@ export default {
 }
 
 .add-equipment-btn {
-  background: #0079c2;
+  background: var(--op-brand);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -439,5 +442,15 @@ export default {
   .price {
     font-size: 1.5rem;
   }
+}
+
+.card-image__placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 2.5rem;
+  color: var(--op-brand);
+  opacity: 0.45;
 }
 </style>

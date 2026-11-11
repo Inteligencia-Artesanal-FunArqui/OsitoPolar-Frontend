@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 import { RentalCatalogService } from '../services/rental-catalog.service.js';
 
 export default {
@@ -44,8 +44,8 @@ export default {
         console.error('Error loading equipment:', error);
         this.$toast.add({
           severity: 'error',
-          summary: 'Error',
-          detail: 'Unable to load equipment information',
+          summary: this.$t('common.error'),
+          detail: this.$t('rental.loadEquipmentError'),
           life: 3000
         });
       } finally {
@@ -69,18 +69,19 @@ export default {
 
     <div v-else-if="equipment" class="equipment-details">
       <div class="equipment-image">
-        <img :src="equipment.imageUrl" :alt="equipment.name" />
+        <img v-if="equipment.imageUrl" :src="equipment.imageUrl" :alt="equipment.name" />
+        <i v-else class="pi pi-box" aria-hidden="true" style="font-size: 3rem; color: var(--op-brand); opacity: 0.4;"></i>
       </div>
       <div class="equipment-info">
         <h3>{{ equipment.name }}</h3>
         <p class="model">{{ equipment.model }}</p>
         <div class="price-badge">
           <span class="price">${{ equipment.monthlyPrice }}</span>
-          <span class="period">/ month</span>
+          <span class="period">/ {{ $t('rental.perMonth') }}</span>
         </div>
         <div class="availability">
           <i class="pi pi-check-circle"></i>
-          <span>{{ equipment.stock }} units available</span>
+          <span>{{ $t('rental.unitsAvailable', { count: equipment.stock }, equipment.stock) }}</span>
         </div>
         <p class="description">{{ equipment.description }}</p>
       </div>
@@ -93,12 +94,12 @@ export default {
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--op-border);
   overflow: hidden;
 }
 
 .card-header {
-  background: linear-gradient(135deg, #0079c2 0%, #005a94 100%);
+  background: linear-gradient(135deg, var(--op-brand) 0%, #005a94 100%);
   color: white;
   padding: 1.5rem 2rem;
 }
@@ -121,8 +122,8 @@ export default {
 .loading-spinner {
   width: 30px;
   height: 30px;
-  border: 2px solid #e1e8ed;
-  border-top: 2px solid #0079c2;
+  border: 2px solid var(--op-border);
+  border-top: 2px solid var(--op-brand);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -148,10 +149,10 @@ export default {
   width: 120px;
   height: 120px;
   object-fit: contain;
-  background: #f8f9fa;
+  background: var(--op-surface-muted);
   border-radius: 12px;
   padding: 1rem;
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--op-border);
 }
 
 .equipment-info h3 {

@@ -1,4 +1,6 @@
-﻿<script>
+<script>
+import { RentalPricingService } from '../services/rental-pricing.service.js';
+
 export default {
   name: 'rental-configuration-form',
   props: {
@@ -14,23 +16,21 @@ export default {
       deliveryAddress: '',
       preferredDate: null,
       notes: '',
+      discounts: [], // tiers of this item (GET /rentalPricing), drive the badges
 
       showQuantityDropdown: false,
-      showMonthsDropdown: false,
-      showDatePicker: false
+      showMonthsDropdown: false
     };
   },
   computed: {
     monthOptions() {
       if (!this.equipment) return [];
       const maxMonths = Math.max(24, this.equipment.minimumRentalPeriod || 1);
-      return Array.from({ length: maxMonths }, (_, i) => {
-        const months = i + 1;
-        return {
-          value: months,
-          label: `${months} ${months === 1 ? this.$t('rental.configuration.month') : this.$t('rental.configuration.months')}`
-        };
-      });
+      const min = this.equipment.minimumRentalPeriod || 1; // shorter periods are rejected by the request validation
+      return Array.from({ length: maxMonths }, (_, i) => i + 1).filter(months => months >= min).map(months => ({
+        value: months,
+        label: `${months} ${this.$t('rental.configuration.month', months)}`
+      }));
     },
 
     quantityOptions() {
@@ -40,27 +40,20 @@ export default {
         const quantity = i + 1;
         return {
           value: quantity,
-          label: `${quantity} ${quantity === 1 ? this.$t('rental.configuration.unit') : this.$t('rental.configuration.units')}`
+          label: `${quantity} ${this.$t('rental.configuration.unit', quantity)}`
         };
       });
     },
-    formattedDate() {
-      if (!this.preferredDate) return this.$t('rental.configuration.selectDate');
-      return this.preferredDate.toLocaleDateString(this.$i18n.locale, {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      });
-    },
-
     minDate() {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       return tomorrow;
     },
-    monthYearLabel() {
-      const today = new Date();
-      return today.toLocaleDateString(this.$i18n.locale, { month: 'long', year: 'numeric' });
+    minDateIso() {
+      return this.toIsoDay(this.minDate);
+    },
+    preferredDateIso() {
+      return this.preferredDate ? this.toIsoDay(this.preferredDate) : '';
     }
   },
   watch: {
@@ -81,6 +74,19 @@ export default {
     }
   },
   methods: {
+    discountFor(months) {
+      return new RentalPricingService().getApplicableDiscount(months, this.discounts);
+    },
+
+    async loadDiscounts() {
+      try {
+        const response = await new RentalPricingService().getRentalPricing(this.equipment.id);
+        this.discounts = response.data[0]?.discounts || [];
+      } catch (error) {
+        console.error('Error loading discount tiers:', error);
+      }
+    },
+
     selectMonth(months) {
       this.rentalMonths = months;
       this.showMonthsDropdown = false;
@@ -91,9 +97,14 @@ export default {
       this.showQuantityDropdown = false;
     },
 
-    selectDate(date) {
-      this.preferredDate = date;
-      this.showDatePicker = false;
+    toIsoDay(date) {
+      const pad = n => String(n).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    },
+
+    onDateInput(event) {
+      const value = event.target.value; // yyyy-mm-dd, local midnight to avoid a UTC day shift
+      this.preferredDate = value ? new Date(`${value}T00:00:00`) : null;
     },
 
     emitConfiguration() {
@@ -106,54 +117,26 @@ export default {
       });
     },
 
-    generateCalendar() {
-      const today = new Date();
-      const currentMonth = today.getMonth();
-      const currentYear = today.getFullYear();
-
-      const firstDay = new Date(currentYear, currentMonth, 1);
-      const lastDay = new Date(currentYear, currentMonth + 1, 0);
-      const daysInMonth = lastDay.getDate();
-      const startingDayOfWeek = firstDay.getDay();
-
-      const calendar = [];
-
-      for (let i = 0; i < startingDayOfWeek; i++) {
-        calendar.push({ day: '', date: null, disabled: true });
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(currentYear, currentMonth, day);
-        const isDisabled = date <= today;
-        calendar.push({
-          day,
-          date,
-          disabled: isDisabled
-        });
-      }
-
-      return calendar;
-    },
-
     closeDropdowns() {
       this.showQuantityDropdown = false;
       this.showMonthsDropdown = false;
-      this.showDatePicker = false;
-    }
-  },
-  mounted() {
-    if (this.$store && this.$store.state && this.$store.state.user?.defaultAddress) {
-      this.deliveryAddress = this.$store.state.user.defaultAddress;
-    }
+    },
 
-    document.addEventListener('click', (e) => {
+    onOutsideClick(e) {
       if (!this.$el.contains(e.target)) {
         this.closeDropdowns();
       }
-    });
+    }
+  },
+  mounted() {
+    // start at the minimum rental period and publish the initial configuration so pricing is computed right away
+    this.rentalMonths = this.equipment?.minimumRentalPeriod || 1;
+    this.emitConfiguration();
+    if (this.equipment) this.loadDiscounts();
+    document.addEventListener('click', this.onOutsideClick);
   },
   beforeUnmount() {
-    document.removeEventListener('click', this.closeDropdowns);
+    document.removeEventListener('click', this.onOutsideClick);
   }
 }
 </script>
@@ -170,7 +153,7 @@ export default {
         <label class="form-label">{{ $t('rental.configuration.period') }}</label>
         <div class="custom-select" @click.stop="showMonthsDropdown = !showMonthsDropdown">
           <div class="select-value">
-            <span>{{ rentalMonths }} {{ rentalMonths === 1 ? $t('rental.configuration.month') : $t('rental.configuration.months') }}</span>
+            <span>{{ rentalMonths }} {{ $t('rental.configuration.month', rentalMonths) }}</span>
             <i class="pi pi-chevron-down"></i>
           </div>
           <div v-if="showMonthsDropdown" class="select-dropdown">
@@ -181,9 +164,7 @@ export default {
                 :class="['dropdown-item', { active: rentalMonths === option.value }]"
             >
               {{ option.label }}
-              <span v-if="option.value >= 12" class="discount-badge">-15%</span>
-              <span v-else-if="option.value >= 6" class="discount-badge">-10%</span>
-              <span v-else-if="option.value >= 3" class="discount-badge">-5%</span>
+              <span v-if="discountFor(option.value)" class="discount-badge">-{{ discountFor(option.value) }}%</span>
             </div>
           </div>
         </div>
@@ -194,7 +175,7 @@ export default {
         <label class="form-label">{{ $t('rental.configuration.quantity') }}</label>
         <div class="custom-select" @click.stop="showQuantityDropdown = !showQuantityDropdown">
           <div class="select-value">
-            <span>{{ quantity }} {{ quantity === 1 ? $t('rental.configuration.unit') : $t('rental.configuration.units') }}</span>
+            <span>{{ quantity }} {{ $t('rental.configuration.unit', quantity) }}</span>
             <i class="pi pi-chevron-down"></i>
           </div>
           <div v-if="showQuantityDropdown" class="select-dropdown">
@@ -210,51 +191,24 @@ export default {
         </div>
       </div>
 
-      <!-- Preferred Date -->
+      <!-- Preferred Date: native input = any month, keyboard + mobile friendly -->
       <div class="form-group full-width">
-        <label class="form-label">Preferred start date</label>
-        <div class="custom-select" @click.stop="showDatePicker = !showDatePicker">
-          <div class="select-value">
-            <i class="pi pi-calendar"></i>
-            <span>{{ formattedDate }}</span>
-            <i class="pi pi-chevron-down"></i>
-          </div>
-
-          <!-- Calendar -->
-          <div v-if="showDatePicker" class="calendar-dropdown">
-            <div class="calendar-header">
-              <span>{{ monthYearLabel }}</span> <!-- computed label in English -->
-            </div>
-            <div class="calendar-grid">
-              <div
-                  class="calendar-day-header"
-                  v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']"
-                  :key="day"
-              >
-                {{ day }}
-              </div>
-
-              <div
-                  v-for="(calendarDay, index) in generateCalendar()"
-                  :key="index"
-                  :class="[
-                  'calendar-day',
-                  { disabled: calendarDay.disabled,
-                    selected: preferredDate && calendarDay.date && preferredDate.getDate() === calendarDay.day }
-                ]"
-                  @click="!calendarDay.disabled && selectDate(calendarDay.date)"
-              >
-                {{ calendarDay.day }}
-              </div>
-            </div>
-          </div>
-        </div>
+        <label class="form-label" for="rental-start-date">{{ $t('rental.configuration.startDate') }}</label>
+        <input
+            id="rental-start-date"
+            type="date"
+            class="custom-textarea date-input"
+            :min="minDateIso"
+            :value="preferredDateIso"
+            @input="onDateInput"
+        />
       </div>
 
       <!-- Delivery Address -->
       <div class="form-group full-width">
-        <label class="form-label">{{ $t('rental.configuration.deliveryAddress') }}</label>
+        <label class="form-label" for="rental-address">{{ $t('rental.configuration.deliveryAddress') }}</label>
         <textarea
+            id="rental-address"
             v-model="deliveryAddress"
             class="custom-textarea"
             rows="3"
@@ -282,12 +236,12 @@ export default {
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--op-border);
   overflow: hidden;
 }
 
 .card-header {
-  background: linear-gradient(135deg, #0079c2 0%, #005a94 100%);
+  background: linear-gradient(135deg, var(--op-brand) 0%, #005a94 100%);
   color: white;
   padding: 1.5rem 2rem;
 }
@@ -327,8 +281,8 @@ export default {
 }
 
 .select-value {
-  background: #f8f9fa;
-  border: 2px solid #e1e8ed;
+  background: var(--op-surface-muted);
+  border: 2px solid var(--op-border);
   border-radius: 12px;
   padding: 1rem 1.25rem;
   display: flex;
@@ -339,30 +293,16 @@ export default {
 }
 
 .select-value:hover {
-  border-color: #0079c2;
+  border-color: var(--op-brand);
   background: #f0f8ff;
 }
 
 .select-value i.pi-calendar {
   margin-right: 0.5rem;
-  color: #0079c2;
+  color: var(--op-brand);
 }
 
 .select-dropdown,
-.calendar-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 2px solid #0079c2;
-  border-radius: 12px;
-  margin-top: 4px;
-  z-index: 1000;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-  max-height: 200px;
-  overflow-y: auto;
-}
 
 .dropdown-item {
   padding: 0.75rem 1.25rem;
@@ -380,11 +320,11 @@ export default {
 
 .dropdown-item:hover {
   background: #f0f8ff;
-  color: #0079c2;
+  color: var(--op-brand);
 }
 
 .dropdown-item.active {
-  background: #0079c2;
+  background: var(--op-brand);
   color: white;
 }
 
@@ -397,61 +337,17 @@ export default {
   font-weight: 600;
 }
 
-.calendar-dropdown {
-  padding: 1rem;
-  max-height: 350px;
-}
 
-.calendar-header {
-  text-align: center;
-  font-weight: 600;
-  color: #0079c2;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-}
 
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
 
-.calendar-day-header {
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #666;
-  padding: 0.5rem;
-}
 
-.calendar-day {
-  text-align: center;
-  padding: 0.75rem;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-}
 
-.calendar-day:hover:not(.disabled) {
-  background: #f0f8ff;
-  color: #0079c2;
-}
 
-.calendar-day.selected {
-  background: #0079c2;
-  color: white;
-  font-weight: 600;
-}
 
-.calendar-day.disabled {
-  color: #ccc;
-  cursor: not-allowed;
-}
 
 .custom-textarea {
-  background: #f8f9fa;
-  border: 2px solid #e1e8ed;
+  background: var(--op-surface-muted);
+  border: 2px solid var(--op-border);
   border-radius: 12px;
   padding: 1rem 1.25rem;
   font-size: 0.95rem;
@@ -462,7 +358,7 @@ export default {
 }
 
 .custom-textarea:focus {
-  border-color: #0079c2;
+  border-color: var(--op-brand);
   background: #f0f8ff;
   box-shadow: 0 0 0 3px rgba(0, 121, 194, 0.1);
 }
@@ -482,4 +378,6 @@ export default {
     grid-column: span 1;
   }
 }
+
+.date-input { width: 100%; }
 </style>

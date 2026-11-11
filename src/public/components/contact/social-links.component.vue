@@ -24,10 +24,6 @@
       </a>
     </div>
 
-    <div class="qr-code">
-      <img src="" alt="Scan for contact info" />
-      <p>{{ $t('contact.scanQR') }}</p>
-    </div>
   </div>
 </template>
 
@@ -40,8 +36,8 @@ export default {
 <style scoped>
 .social-links {
   flex: 1;
-  min-width: 300px;
-  background: #f8f9fa;
+  min-width: 0;
+  background: var(--op-surface-muted);
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -109,7 +105,7 @@ h2 {
 .qr-code img {
   width: 150px;
   height: 150px;
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--op-border);
   border-radius: 8px;
   padding: 0.5rem;
   background: white;

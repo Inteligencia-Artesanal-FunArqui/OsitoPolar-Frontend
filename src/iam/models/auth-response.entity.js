@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @class AuthResponse
  * @description Entity class representing authentication response from backend
  */
@@ -12,10 +12,19 @@ export class AuthResponse {
     constructor({
                     id = 0,
                     username = '',
-                    token = ''
+                    token = '',
+                    userType = null,
+                    companyName = null,
+                    profileId = null,
+                    planId = null
                 } = {}) {
         this.id = id;
         this.username = username;
         this.token = token;
+        // optional extras the real backend sends on sign-in (Owner / Provider)
+        this.userType = userType;
+        this.companyName = companyName;
+        this.profileId = profileId;
+        this.planId = planId;
     }
 }

@@ -1,7 +1,8 @@
-﻿<script>
+<script>
 import { RentalPricingService } from '../services/rental-pricing.service.js';
 import { RentalRequestService } from '../services/rental-request.service.js';
 import { RentalPaymentService } from '../services/rental-payment.service.js';
+import { useAuthStore } from '../../iam/store/auth.store.js';
 
 export default {
   name: 'rental-pricing-summary',
@@ -23,12 +24,18 @@ export default {
       firstPayment: 0,
       isSubmitting: false,
 
-      pricingService: null,
-      requestService: null,
-      paymentService: null
+      // created here (not in created()): the immediate `equipment` watcher runs before created()
+      pricingService: new RentalPricingService(),
+      requestService: new RentalRequestService(),
+      paymentService: new RentalPaymentService()
     };
   },
   computed: {
+    // demo builds store the request locally; nothing is charged
+    isDemo() {
+      return import.meta.env.VITE_DEMO_MODE === 'true';
+    },
+
     discountPercentage() {
       if (!this.pricing?.discounts || !this.configuration?.rentalMonths || this.configuration.rentalMonths < 3) return 0;
       return this.pricingService.getApplicableDiscount(this.configuration.rentalMonths, this.pricing.discounts);
@@ -62,11 +69,6 @@ export default {
         }
       }
     }
-  },
-  created() {
-    this.pricingService = new RentalPricingService();
-    this.requestService = new RentalRequestService();
-    this.paymentService = new RentalPaymentService();
   },
   methods: {
     async loadPricing() {
@@ -113,7 +115,7 @@ export default {
         this.isSubmitting = true;
 
         const requestData = {
-          userId: this.$store.state.user?.id || '1',
+          userId: useAuthStore().user?.id ?? 1, // pinia store (there is no Vuex $store here)
           rentalEquipmentId: this.equipment.id,
           quantity: this.configuration.quantity,
           rentalPeriodMonths: this.configuration.rentalMonths,
@@ -142,8 +144,8 @@ export default {
             // For demo purposes, show success message
             this.$toast.add({
               severity: 'success',
-              summary: 'Solicitud Enviada',
-              detail: 'Tu solicitud de alquiler ha sido enviada exitosamente',
+              summary: this.$t('rental.summary.sentTitle'),
+              detail: this.$t('rental.summary.sentDetail'),
               life: 5000
             });
 
@@ -154,8 +156,8 @@ export default {
         console.error('Error submitting rental request:', error);
         this.$toast.add({
           severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudo procesar tu solicitud',
+          summary: this.$t('common.error'),
+          detail: this.$t('rental.summary.submitError'),
           life: 3000
         });
       } finally {
@@ -167,8 +169,8 @@ export default {
       if (!this.configuration?.deliveryAddress?.trim()) {
         this.$toast.add({
           severity: 'warn',
-          summary: 'Required Fields',
-          detail: 'Please enter a delivery address',
+          summary: this.$t('rental.summary.requiredTitle'),
+          detail: this.$t('rental.summary.requiredAddress'),
           life: 3000
         });
         return;
@@ -177,8 +179,8 @@ export default {
       if (!this.configuration?.preferredDate) {
         this.$toast.add({
           severity: 'warn',
-          summary: 'Required Fields',
-          detail: 'Please select a preferred start date',
+          summary: this.$t('rental.summary.requiredTitle'),
+          detail: this.$t('rental.summary.requiredDate'),
           life: 3000
         });
         return;
@@ -240,20 +242,22 @@ export default {
       <i v-if="!isSubmitting" class="pi pi-arrow-right"></i>
       <div v-else class="button-spinner"></div>
     </button>
+    <p v-if="isDemo" class="demo-note"><i class="pi pi-info-circle" aria-hidden="true"></i> {{ $t('rental.summary.demoNote') }}</p>
   </div>
 </template>
 
 <style scoped>
+.demo-note { margin-top: 0.75rem; font-size: 0.85rem; color: var(--op-text-muted, #5f6b76); display: flex; gap: 0.5rem; align-items: flex-start; }
 .summary-card {
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--op-border);
   overflow: hidden;
 }
 
 .card-header {
-  background: linear-gradient(135deg, #0079c2 0%, #005a94 100%);
+  background: linear-gradient(135deg, var(--op-brand) 0%, #005a94 100%);
   color: white;
   padding: 1.5rem 2rem;
 }
@@ -309,7 +313,7 @@ export default {
 }
 
 .price-divider {
-  border-top: 2px solid #e1e8ed;
+  border-top: 2px solid var(--op-border);
   margin: 1rem 0;
 }
 
@@ -321,7 +325,7 @@ export default {
 
 .total-price {
   font-size: 1.5rem;
-  color: #0079c2;
+  color: var(--op-brand);
   font-weight: 700;
 }
 
@@ -340,7 +344,7 @@ export default {
 }
 
 .info-badge i {
-  color: #0079c2;
+  color: var(--op-brand);
   margin-top: 0.125rem;
   flex-shrink: 0;
 }

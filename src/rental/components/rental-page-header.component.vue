@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 export default {
   name: 'rental-page-header',
   props: {
@@ -12,7 +12,7 @@ export default {
     },
     backText: {
       type: String,
-      default: 'Back to catalog'
+      default: ''
     }
   },
   methods: {
@@ -32,7 +32,7 @@ export default {
           class="back-link"
       >
         <i class="pi pi-arrow-left"></i>
-        <span>{{ backText }}</span>
+        <span>{{ backText || $t('rental.header.backToCatalog') }}</span>
       </button>
       <h1>{{ title }}</h1>
     </div>
@@ -42,7 +42,7 @@ export default {
 <style scoped>
 .page-header {
   background: white;
-  border-bottom: 1px solid #e1e8ed;
+  border-bottom: 1px solid var(--op-border);
   padding: 1.5rem 2rem;
 }
 
@@ -60,7 +60,7 @@ export default {
   gap: 0.5rem;
   color: #666;
   background: none;
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--op-border);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   cursor: pointer;
@@ -70,12 +70,12 @@ export default {
 
 .back-link:hover {
   background: #f0f8ff;
-  color: #0079c2;
-  border-color: #0079c2;
+  color: var(--op-brand);
+  border-color: var(--op-brand);
 }
 
 h1 {
-  color: #0079c2;
+  color: var(--op-brand);
   margin: 0;
   font-size: 1.75rem;
   font-weight: 600;

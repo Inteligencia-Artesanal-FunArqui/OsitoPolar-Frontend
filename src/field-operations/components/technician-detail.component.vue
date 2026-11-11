@@ -40,9 +40,7 @@ export default {
       <div class="field"><i class="pi pi-star field-icon"></i><strong>{{ $t('technicians.averageRating') }}:</strong> <span class="field-value">{{ technician.getAverageRating() }}</span></div>
       <div class="field"><i class="pi pi-building field-icon"></i><strong>{{ $t('technicians.company') }}:</strong> <span class="field-value">{{ technician.companyId }}</span></div>
       <div class="field"><i class="pi pi-globe field-icon"></i><strong>{{ $t('technicians.availability') }}:</strong>
-        <span :class="technician.getAvailabilityClass()">
-          {{ technician.getAvailabilityStatus() }}
-        </span>
+        <op-status-badge kind="availability" :value="technician.availability" />
       </div>
     </div>
   </pv-dialog>
@@ -69,14 +67,14 @@ export default {
 }
 
 .field strong {
-  color: #0056b3;
+  color: var(--op-brand-strong);
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .field-icon {
   font-size: 1.25rem;
-  color: #007bff;
+  color: var(--op-brand);
   margin-right: 0.2rem;
 }
 
@@ -84,35 +82,7 @@ export default {
   flex-grow: 1;
 }
 
-.status-available {
-  color: #28a745;
-  font-weight: 600;
-  background-color: #e6ffe6;
-  padding: 0.2em 0.6em;
-  border-radius: 4px;
-}
 
-.status-occupied {
-  color: #ffc107;
-  font-weight: 600;
-  background-color: #fff9e6;
-  padding: 0.2em 0.6em;
-  border-radius: 4px;
-}
 
-.status-on-leave {
-  color: #dc3545;
-  font-weight: 600;
-  background-color: #ffe6e6;
-  padding: 0.2em 0.6em;
-  border-radius: 4px;
-}
 
-.status-unknown {
-  color: #6c757d;
-  font-weight: 600;
-  background-color: #f2f2f2;
-  padding: 0.2em 0.6em;
-  border-radius: 4px;
-}
 </style>

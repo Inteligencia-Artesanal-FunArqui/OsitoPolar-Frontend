@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 export default {
   name: 'rental-filter-bar',
   data() {
@@ -13,23 +13,23 @@ export default {
     equipmentTypes() {
       return [
         { value: 'all', label: this.$t('rental.filter.allEquipment') },
-        { value: 'freezer', label: this.$t('rental.filter.freezer', 'Freezers') },
-        { value: 'cold_room', label: this.$t('rental.filter.coldRoom', 'Cold Rooms') },
-        { value: 'refrigerator', label: this.$t('rental.filter.refrigerator', 'Refrigerators') }
+        { value: 'freezer', label: this.$t('rental.filter.freezer') },
+        { value: 'cold_room', label: this.$t('rental.filter.coldRoom') },
+        { value: 'refrigerator', label: this.$t('rental.filter.refrigerator') }
       ];
     },
     sortOptions() {
       return [
-        { value: 'price_asc', label: this.$t('rental.filter.sortOptions.lowToHigh', 'Price: Low to High') },
-        { value: 'price_desc', label: this.$t('rental.filter.sortOptions.highToLow', 'Price: High to Low') },
-        { value: 'name_asc', label: this.$t('rental.filter.sortOptions.nameAZ', 'Name: A-Z') }
+        { value: 'price_asc', label: this.$t('rental.filter.sortOptions.lowToHigh') },
+        { value: 'price_desc', label: this.$t('rental.filter.sortOptions.highToLow') },
+        { value: 'name_asc', label: this.$t('rental.filter.sortOptions.nameAZ') }
       ];
     },
     selectedTypeLabel() {
-      return this.equipmentTypes.find(type => type.value === this.selectedType)?.label || 'Todos los equipos';
+      return this.equipmentTypes.find(type => type.value === this.selectedType)?.label || this.$t('rental.filter.allEquipment');
     },
     selectedSortLabel() {
-      return this.sortOptions.find(option => option.value === this.sortBy)?.label || 'Precio: Menor a Mayor';
+      return this.sortOptions.find(option => option.value === this.sortBy)?.label || this.$t('rental.filter.sortOptions.lowToHigh');
     }
   },
   methods: {
@@ -132,7 +132,7 @@ export default {
                   min="0"
                   max="1000"
                   class="price-input"
-                  placeholder="Mín"
+                  :placeholder="$t('rental.filter.minPrice')"
               >
             </div>
             <span class="range-separator">-</span>
@@ -145,7 +145,7 @@ export default {
                   min="0"
                   max="1000"
                   class="price-input"
-                  placeholder="Máx"
+                  :placeholder="$t('rental.filter.maxPrice')"
               >
             </div>
           </div>
@@ -213,7 +213,7 @@ export default {
   padding: 1.5rem;
   margin-bottom: 2rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--op-border);
 }
 
 .mobile-filter-toggle {
@@ -225,7 +225,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #0079c2;
+  background: var(--op-brand);
   color: white;
   border: none;
   padding: 0.75rem 1rem;
@@ -275,8 +275,8 @@ export default {
 }
 
 .dropdown-selected {
-  background: #f8f9fa;
-  border: 2px solid #e1e8ed;
+  background: var(--op-surface-muted);
+  border: 2px solid var(--op-border);
   border-radius: 8px;
   padding: 0.75rem 1rem;
   cursor: pointer;
@@ -288,13 +288,13 @@ export default {
 }
 
 .dropdown-selected:hover {
-  border-color: #0079c2;
+  border-color: var(--op-brand);
   background: #f0f8ff;
 }
 
 .dropdown-selected:focus-within {
   outline: none;
-  border-color: #0079c2;
+  border-color: var(--op-brand);
   box-shadow: 0 0 0 3px rgba(0, 121, 194, 0.1);
 }
 
@@ -304,7 +304,7 @@ export default {
   left: 0;
   right: 0;
   background: white;
-  border: 2px solid #e1e8ed;
+  border: 2px solid var(--op-border);
   border-radius: 8px;
   margin-top: 4px;
   z-index: 1000;
@@ -316,7 +316,7 @@ export default {
 
 .dropdown-options.open {
   max-height: 300px;
-  border-color: #0079c2;
+  border-color: var(--op-brand);
 }
 
 .dropdown-option {
@@ -333,11 +333,11 @@ export default {
 
 .dropdown-option:hover {
   background: #f0f8ff;
-  color: #0079c2;
+  color: var(--op-brand);
 }
 
 .dropdown-option.active {
-  background: #0079c2;
+  background: var(--op-brand);
   color: white;
   font-weight: 500;
 }
@@ -358,8 +358,8 @@ export default {
 .price-input-group {
   display: flex;
   align-items: center;
-  background: #f8f9fa;
-  border: 2px solid #e1e8ed;
+  background: var(--op-surface-muted);
+  border: 2px solid var(--op-border);
   border-radius: 8px;
   padding: 0 0.75rem;
   transition: all 0.2s ease;
@@ -367,7 +367,7 @@ export default {
 }
 
 .price-input-group:focus-within {
-  border-color: #0079c2;
+  border-color: var(--op-brand);
   box-shadow: 0 0 0 3px rgba(0, 121, 194, 0.1);
 }
 
@@ -394,7 +394,7 @@ export default {
 .range-slider-container {
   position: relative;
   height: 6px;
-  background: #e1e8ed;
+  background: var(--op-border);
   border-radius: 3px;
   margin: 0.5rem 0;
 }
@@ -416,7 +416,7 @@ export default {
   appearance: none;
   width: 20px;
   height: 20px;
-  background: #0079c2;
+  background: var(--op-brand);
   border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -431,7 +431,7 @@ export default {
 .range-slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
-  background: #0079c2;
+  background: var(--op-brand);
   border-radius: 50%;
   cursor: pointer;
   border: none;
@@ -445,7 +445,7 @@ export default {
   gap: 0.5rem;
   background: transparent;
   color: #666;
-  border: 2px solid #e1e8ed;
+  border: 2px solid var(--op-border);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   font-size: 0.9rem;
@@ -455,9 +455,9 @@ export default {
 }
 
 .clear-filters-btn:hover {
-  background: #f8f9fa;
-  border-color: #0079c2;
-  color: #0079c2;
+  background: var(--op-surface-muted);
+  border-color: var(--op-brand);
+  color: var(--op-brand);
   transform: translateY(-1px);
 }
 

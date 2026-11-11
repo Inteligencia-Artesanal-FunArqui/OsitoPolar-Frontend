@@ -35,20 +35,18 @@ export default {
     },
 
     pageTitle() {
-      if (this.isNewEquipment) return 'Create New Equipment';
-      if (this.isEditMode) return 'Edit Equipment';
-      return 'Equipment Details';
+      if (this.isNewEquipment) return this.$t('equipment.form.addTitle');
+      if (this.isEditMode) return this.$t('equipment.form.editTitle');
+      return this.equipment?.name || this.$t('equipment.detail.title');
     }
   },
   methods: {
-    async loadEquipment() {
+    async loadEquipment(openEdit = false) {
       this.loading = true;
       this.hasError = false;
 
       try {
         if (this.equipmentId === 'new') {
-          console.log('🆕 Creating new equipment form');
-
           this.equipment = new Equipment({
             name: '',
             type: 'Freezer',
@@ -84,10 +82,9 @@ export default {
         }
 
 
-        console.log(` Loading equipment: ${this.equipmentId}`);
         this.equipment = await this.equipmentService.getEquipmentById(this.equipmentId);
         this.isNewEquipment = false;
-        this.isEditMode = false;
+        this.isEditMode = openEdit === true; // list "edit" button deep-links with ?edit=1
         this.loading = false;
 
       } catch (error) {
@@ -110,18 +107,32 @@ export default {
 
 
     async saveEquipment(equipmentData) {
+      if (this.isNewEquipment) {
+        this.$router.push('/equipment');
+        return;
+      }
+
+      // The form only emits the data; persisting it is this page's job (it used to just reload and drop the edits).
+      this.saving = true;
       try {
-        if (this.isNewEquipment) {
-
-          this.$router.push('/equipment');
-        } else {
-
-          this.isEditMode = false;
-
-          await this.loadEquipment();
-        }
+        await this.equipmentService.updateEquipment(this.equipment.id, equipmentData);
+        this.$toast.add({
+          severity: 'success',
+          summary: this.$t('common.success'),
+          detail: this.$t('equipment.form.updated', { name: equipmentData.name }),
+          life: 3000
+        });
+        await this.loadEquipment();
       } catch (error) {
-        console.error('Error in saveEquipment callback:', error);
+        console.error('Error saving equipment:', error);
+        this.$toast.add({
+          severity: 'error',
+          summary: this.$t('common.error'),
+          detail: this.$t('equipment.form.updateError'),
+          life: 5000
+        });
+      } finally {
+        this.saving = false;
       }
     },
 
@@ -135,6 +146,7 @@ export default {
         this.equipment.setTemperature = newTemperature;
       } catch (error) {
         console.error('Error updating temperature:', error);
+        this.$toast.add({ severity: 'error', summary: this.$t('common.error'), detail: this.$t('equipment.control.updateError'), life: 4000 });
       }
     },
 
@@ -148,16 +160,17 @@ export default {
         this.equipment.isPoweredOn = newPowerState;
       } catch (error) {
         console.error('Error toggling power:', error);
+        this.$toast.add({ severity: 'error', summary: this.$t('common.error'), detail: this.$t('equipment.control.updateError'), life: 4000 });
       }
     }
   },
   created() {
-    this.loadEquipment();
+    this.loadEquipment(this.$route.query.edit === '1');
   },
   watch: {
     '$route.params.id'(newId, oldId) {
       if (newId !== oldId) {
-        this.loadEquipment();
+        this.loadEquipment(this.$route.query.edit === '1');
       }
     }
   }
@@ -166,54 +179,23 @@ export default {
 
 <template>
   <div class="equipment-detail">
-    <div class="page-header">
-      <h1>{{ pageTitle }}</h1>
+    <op-page-header :title="pageTitle" :subtitle="currentView === 'detail' ? $t('equipment.detail.subtitle') : ''" back-to="/equipment" :back-label="$t('equipment.backToList')">
+      <template v-if="isNewEquipment">
+        <pv-button :label="$t('common.cancel')" severity="secondary" outlined :disabled="saving" @click="$router.push('/equipment')" />
+      </template>
+      <template v-else-if="currentView === 'detail' && equipment">
+        <pv-button :label="$t('equipment.detail.analytics')" icon="pi pi-chart-line" severity="secondary" outlined @click="$router.push({ name: 'equipment-analytics', params: { id: equipment.id } })" />
+        <pv-button :label="$t('equipment.detail.edit')" icon="pi pi-pencil" @click="enterEditMode" />
+      </template>
+      <template v-else-if="isEditMode">
+        <pv-button :label="$t('common.cancel')" severity="secondary" outlined :disabled="saving" @click="cancelEdit" />
+      </template>
+    </op-page-header>
 
-      <div class="header-actions">
-        <template v-if="isNewEquipment">
-          <pv-button
-              label="Cancel"
-              @click="$router.push('/equipment')"
-              class="p-button-secondary"
-              :disabled="saving"
-          />
-        </template>
-
-        <template v-else-if="!isNewEquipment && currentView === 'detail'">
-          <pv-button
-              label="Edit Equipment"
-              @click="enterEditMode"
-              class="p-button-primary"
-              icon="pi pi-pencil"
-          />
-        </template>
-
-        <template v-else-if="isEditMode">
-          <pv-button
-              label="Cancel"
-              @click="cancelEdit"
-              class="p-button-secondary"
-              :disabled="saving"
-          />
-        </template>
-      </div>
-    </div>
-
-    <div v-if="loading" class="loading-container">
-      <pv-progress-spinner />
-      <p>Loading equipment...</p>
-    </div>
-
-    <div v-else-if="hasError" class="error-container">
-      <pv-message severity="error" :closable="false">
-        <p>Error loading equipment. Please try again.</p>
-      </pv-message>
-      <pv-button label="Retry" @click="loadEquipment" class="p-button-secondary" />
-    </div>
-
+    <op-loading-state v-if="loading" :label="$t('equipment.detail.loading')" />
+    <op-error-state v-else-if="hasError" :message="$t('equipment.detail.loadError')" @retry="loadEquipment()" />
 
     <div v-else-if="equipment" class="equipment-content">
-
       <div v-if="currentView === 'form'" class="form-view">
         <equipment-form-component
             :equipment="equipment"
@@ -244,68 +226,12 @@ export default {
 </template>
 
 <style scoped>
-.equipment-detail {
-  padding: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 1rem;
-}
-
-.page-header h1 {
-  margin: 0;
-  color: #333;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.loading-container, .error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 3rem;
-  text-align: center;
-}
-
-.equipment-content {
-  width: 100%;
-}
-
-.form-view {
-  max-width: 800px;
-  margin: 0 auto;
-}
+.form-view { max-width: 900px; margin: 0 auto; }
 
 .detail-view .content-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-@media (max-width: 768px) {
-  .detail-view .content-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-
-  .header-actions {
-    justify-content: center;
-  }
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: var(--op-space-6);
+  align-items: start;
 }
 </style>

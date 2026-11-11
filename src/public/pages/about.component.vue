@@ -1,32 +1,37 @@
-﻿<script>
+<script>
 /**
  * @component about
- * @description About page component providing information about the company
- * Presents the company's mission, vision, and core values
+ * @description About page: what OsitoPolar is, its mission and vision (all copy through i18n).
  */
 export default {
-  name: "about",
-  title: "About Us",
+  name: "about"
 }
 </script>
 
 <template>
-  <div class="w-full">
-    <h1>About Us</h1>
-    <p>OsitoPolar is a technology platform dedicated to intelligent management of refrigeration equipment.</p>
+  <div class="about-page">
+    <op-page-header :title="$t('about.title')" :subtitle="$t('about.intro')" />
 
-    <div class="mt-4">
-      <h2>Our Mission</h2>
-      <p>To provide an intelligent technological solution that allows businesses to protect their inventory and optimize the management of their refrigeration equipment, while offering specialized tools to improve the operational efficiency of technicians and suppliers in the sector.</p>
-    </div>
+    <div class="about-grid">
+      <section class="op-card">
+        <i class="pi pi-flag about-icon" aria-hidden="true"></i>
+        <h2>{{ $t('about.missionTitle') }}</h2>
+        <p>{{ $t('about.mission') }}</p>
+      </section>
 
-    <div class="mt-4">
-      <h2>Our Vision</h2>
-      <p>To be the leading company in refrigeration equipment management and maintenance, starting in Lima and soon expanding to more places in Peru.</p>
+      <section class="op-card">
+        <i class="pi pi-eye about-icon" aria-hidden="true"></i>
+        <h2>{{ $t('about.visionTitle') }}</h2>
+        <p>{{ $t('about.vision') }}</p>
+      </section>
     </div>
   </div>
 </template>
 
 <style scoped>
-
+.about-page { max-width: 960px; margin: 0 auto; }
+.about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: var(--op-space-5); }
+.about-icon { font-size: 1.6rem; color: var(--op-brand); margin-bottom: var(--op-space-3); }
+.about-grid h2 { font-size: 1.2rem; color: var(--op-text-strong); margin-bottom: var(--op-space-2); }
+.about-grid p { color: var(--op-text); line-height: 1.65; }
 </style>

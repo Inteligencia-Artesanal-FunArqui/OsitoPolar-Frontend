@@ -1,4 +1,4 @@
-﻿<script>
+<script>
 import { LocationService } from '../services/location.service.js';
 
 /**
@@ -29,6 +29,7 @@ export default {
   emits: ['select-equipment', 'location-detected', 'location-clicked', 'location-error'],
   data() {
     return {
+      demoMode: import.meta.env.VITE_DEMO_MODE === 'true',
       locationService: null,
       currentLocation: null,
       locationError: null,
@@ -76,9 +77,10 @@ export default {
      * Location status message
      */
     locationStatusMessage() {
-      if (this.locationError) return this.locationError.userMessage || 'Location error';
-      if (this.currentLocation) return 'Location detected';
-      return 'Getting location...';
+      if (this.demoMode) return this.$t('map.demoLocation'); // geolocation is disabled offline, don't wait forever
+      if (this.locationError) return this.locationError.userMessage || this.$t('map.locationError');
+      if (this.currentLocation) return this.$t('map.locationDetected');
+      return this.$t('map.gettingLocation');
     },
 
     /**
@@ -112,7 +114,7 @@ export default {
           this.locationError = null;
           this.retryCount = 0;
           this.$emit('location-detected', data);
-          this.showToast('success', 'Location detected successfully');
+          this.showToast('success', this.$t('map.locationDetectedOk'));
           this.findNearestEquipment();
           break;
 
@@ -134,6 +136,7 @@ export default {
      * Get current location
      */
     async getCurrentLocation() {
+      if (this.demoMode) return;
       if (!this.locationService) {
         this.initLocationService();
       }
@@ -183,7 +186,7 @@ export default {
           lng: this.currentLocation.lng
         };
         this.zoom = 16;
-        this.showToast('info', 'Centered on your location');
+        this.showToast('info', this.$t('map.centeredOnYou'));
       }
     },
 
@@ -197,7 +200,7 @@ export default {
           lng: this.selectedEquipment.location.coordinates.lng
         };
         this.zoom = 16;
-        this.showToast('info', `Centered on ${this.selectedEquipment.name}`);
+        this.showToast('info', this.$t('map.centeredOn', { name: this.selectedEquipment.name }));
       }
     },
 
@@ -205,6 +208,7 @@ export default {
      * Open in Google Maps app
      */
     openInGoogleMaps() {
+      if (this.demoMode) return;
       const center = `${this.mapCenter.lat},${this.mapCenter.lng}`;
       const url = `https://www.google.com/maps?q=${center}&z=${this.zoom}`;
       window.open(url, '_blank');
@@ -225,8 +229,8 @@ export default {
       if (this.$toast) {
         this.$toast.add({
           severity,
-          summary: severity === 'success' ? 'Location' :
-              severity === 'error' ? 'Error' : 'Info',
+          summary: severity === 'success' ? this.$t('map.location') :
+              severity === 'error' ? this.$t('common.error') : this.$t('common.info'),
           detail: message,
           life: 3000
         });
@@ -255,8 +259,10 @@ export default {
     }
   },
   mounted() {
-    this.initLocationService();
-    this.getCurrentLocation();
+    if (!this.demoMode) {
+      this.initLocationService();
+      this.getCurrentLocation();
+    }
   },
   beforeUnmount() {
     if (this.locationService) {
@@ -272,9 +278,9 @@ export default {
     <!-- Header -->
     <div class="map-header">
       <div class="map-title">
-        <h3>Equipment Locations</h3>
+        <h3>{{ $t('map.title') }}</h3>
         <span class="equipment-count" v-if="equipmentCount > 0">
-          {{ equipmentCount }} device{{ equipmentCount !== 1 ? 's' : '' }}
+          {{ $t('map.devices', { count: equipmentCount }, equipmentCount) }}
         </span>
       </div>
 
@@ -285,7 +291,7 @@ export default {
             :class="{ 'loading': isLoadingLocation }"
             @click="getCurrentLocation"
             :disabled="isLoadingLocation"
-            title="Get current location"
+            :title="$t('map.getLocation')"
         >
           <i class="pi pi-map-marker" v-if="!isLoadingLocation"></i>
           <i class="pi pi-spin pi-spinner" v-else></i>
@@ -295,7 +301,7 @@ export default {
             v-if="currentLocation"
             class="action-btn center-btn"
             @click="centerOnCurrentLocation"
-            title="Center on my location"
+            :title="$t('map.centerOnMe')"
         >
           <i class="pi pi-crosshairs"></i>
         </button>
@@ -304,7 +310,7 @@ export default {
             v-if="selectedEquipment"
             class="action-btn equipment-btn"
             @click="centerOnEquipment"
-            title="Center on selected equipment"
+            :title="$t('map.centerOnEquipment')"
         >
           <i class="pi pi-building"></i>
         </button>
@@ -312,7 +318,7 @@ export default {
         <button
             class="action-btn external-btn"
             @click="openInGoogleMaps"
-            title="Open in Google Maps"
+            :title="$t('map.openInMaps')"
         >
           <i class="pi pi-external-link"></i>
         </button>
@@ -338,7 +344,7 @@ export default {
             v-if="shouldShowRetry"
             class="retry-btn"
             @click="retryLocation"
-            title="Retry location detection"
+            :title="$t('map.retryLocation')"
         >
           <i class="pi pi-refresh"></i>
         </button>
@@ -355,14 +361,15 @@ export default {
 
     <!-- Map Container -->
     <div class="map-container">
-      <iframe
+      <p v-if="demoMode" class="demo-map-note">{{ $t('map.demoNote') }}</p>
+      <iframe v-else
           :src="mapUrl"
           class="map-iframe"
           frameborder="0"
           style="border:0;"
           allowfullscreen=""
           loading="lazy"
-          :title="`Map showing ${equipmentCount} equipment locations`"
+          :title="$t('map.iframeTitle', { count: equipmentCount })"
       ></iframe>
     </div>
 
@@ -381,7 +388,7 @@ export default {
       >
         <div class="item-info">
           <div class="item-name">{{ equip.name }}</div>
-          <div class="item-location">{{ equip.location?.name || 'Unknown' }}</div>
+          <div class="item-location">{{ equip.location?.name || equip.locationName || $t('common.notSpecified') }}</div>
         </div>
         <div class="item-temp">{{ equip.currentTemperature.toFixed(1) }}°C</div>
       </div>
@@ -405,7 +412,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, var(--op-surface-muted) 0%, #e9ecef 100%);
   border-bottom: 1px solid #dee2e6;
 }
 
@@ -466,7 +473,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 12px 20px;
-  background: #f8f9fa;
+  background: var(--op-surface-muted);
   border-bottom: 1px solid #dee2e6;
   min-height: 48px;
 }
@@ -480,11 +487,11 @@ export default {
 }
 
 .location-status.success {
-  color: #28a745;
+  color: var(--op-success);
 }
 
 .location-status.error {
-  color: #dc3545;
+  color: var(--op-danger);
 }
 
 .location-status.loading {
@@ -520,9 +527,9 @@ export default {
   font-size: 0.8rem;
 }
 
-.temp-normal { color: #28a745; background: rgba(40, 167, 69, 0.1); }
+.temp-normal { color: var(--op-success); background: rgba(40, 167, 69, 0.1); }
 .temp-warning { color: #ffc107; background: rgba(255, 193, 7, 0.1); }
-.temp-critical { color: #dc3545; background: rgba(220, 53, 69, 0.1); }
+.temp-critical { color: var(--op-danger); background: rgba(220, 53, 69, 0.1); }
 
 .map-container {
   flex: 1;
@@ -550,7 +557,7 @@ export default {
   min-width: 140px;
   padding: 12px;
   border-radius: 8px;
-  background: #f8f9fa;
+  background: var(--op-surface-muted);
   border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -575,11 +582,11 @@ export default {
 }
 
 .equipment-item.status-critical {
-  border-left: 4px solid #dc3545;
+  border-left: 4px solid var(--op-danger);
 }
 
 .equipment-item.status-normal {
-  border-left: 4px solid #28a745;
+  border-left: 4px solid var(--op-success);
 }
 
 .item-info {
@@ -645,4 +652,6 @@ export default {
     padding: 10px;
   }
 }
+
+.demo-map-note { padding: 2rem; color: var(--op-brand-strong); }
 </style>

@@ -64,7 +64,6 @@ export default {
       <pv-button :label="$t('client.rating.submitRating')" icon="pi pi-check" class="p-button-primary" @click="submit" />
     </template>
   </pv-dialog>
-  <pv-toast />
 </template>
 
 <style scoped>
