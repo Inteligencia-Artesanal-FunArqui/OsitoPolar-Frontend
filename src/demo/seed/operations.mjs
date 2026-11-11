@@ -1,0 +1,75 @@
+// Notifications, technicians, service requests, work orders, maintenance log. Relative dates are anchored on `now`.
+// Decisions (db.json vs real backend vs frontend models):
+//  - texts are Spanish (UI default); db.json English names are kept for equipment/people.
+//  - service request status/priority/urgency are lowercase_underscore because the frontend compares them literally
+//    (the real backend emits Pending/InProgress...); serviceType keeps the backend PascalCase enum.
+//  - db.json used `technicianId`/`rating`/`completionDate`/`userId` on service requests: mapped to the backend names
+//    assignedTechnicianId / customerFeedbackRating / actualCompletionDate / clientId.
+//  - orderNumber follows db.json (SR-2023-001 style) instead of the backend GUID.
+//  - technician availability 'available'/'busy' (db.json) -> 'Available'/'Occupied' (what Technician.getAvailabilityClass() matches).
+//  - db.json work order 'pending_assignment' -> 'created' (frontend WorkOrder model has no pending_assignment).
+import { DEMO_PROVIDER_ID } from './catalog.mjs';
+
+const H = 36e5, D = 24 * H;
+export function buildOperations(now) {
+  const ago = ms => new Date(now.getTime() - ms).toISOString();
+  const ahead = ms => new Date(now.getTime() + ms).toISOString();
+
+  const notifications = [
+    [1, 1, 'High temperature', 'La congeladora XK-400 registra temperaturas por encima del rango óptimo.', 'unread', 0.5 * H, 'alert'],
+    [2, 5, 'Energy consumption spike', 'La cámara CR-300 muestra un consumo de energía mayor al habitual.', 'unread', 3 * H, 'warning'],
+    [3, 6, 'Temperature drifting', 'El refrigerador DR-220 supera el máximo recomendado (8 °C). Revisa el sello de la puerta.', 'unread', 5 * H, 'alert'],
+    [4, null, 'Technician assigned', 'Roberto Technician fue asignado a tu solicitud SR-2026-004.', 'unread', 20 * H, 'service_request'],
+    [5, 6, 'Service request resolved', 'Tu solicitud SR-2026-006 fue resuelta. Califica el servicio cuando puedas.', 'unread', 40 * H, 'service_request'],
+    [6, 2, 'Maintenance completed', 'El mantenimiento de la cámara CF-200 se completó correctamente.', 'read', 30 * H, 'info'],
+    [7, null, 'Plan limit', 'Usas 10 de 12 equipos de tu plan Standard (Snow Bear).', 'read', 2 * D, 'system'],
+    [8, null, 'Payment received', 'Recibimos tu pago mensual de USD 35.13 del plan Standard.', 'read', 3 * D, 'payment'],
+    [9, 9, 'Equipment out of service', 'El frigobar BF-60 fue marcado fuera de servicio por falla del compresor.', 'read', 5 * D, 'alert']
+  ].map(([id, equipmentId, title, description, status, age, type]) => ({ id, userId: 1, equipmentId, title, description, status, timestamp: ago(age), type }));
+
+  const technicians = [
+    { id: 1, name: 'Roberto Technician', specialization: 'Industrial refrigeration', phone: '987123456', email: 'roberto@tecnico.com', averageRating: 4.8, availability: 'Available', companyId: DEMO_PROVIDER_ID },
+    { id: 2, name: 'Ana García', specialization: 'Commercial refrigeration', phone: '987123457', email: 'ana@tecnico.com', averageRating: 4.9, availability: 'Occupied', companyId: DEMO_PROVIDER_ID },
+    { id: 3, name: 'Miguel Torres', specialization: 'Control electronics', phone: '987123458', email: 'miguel@tecnico.com', averageRating: 4.5, availability: 'Occupied', companyId: DEMO_PROVIDER_ID },
+    { id: 4, name: 'Rosa Paredes', specialization: 'Commercial installations', phone: '987123459', email: 'rosa@tecnico.com', averageRating: 4.2, availability: 'On Leave', companyId: DEMO_PROVIDER_ID }
+  ];
+
+  const sr = (id, o) => ({
+    id, orderNumber: `SR-${new Date(o.requestTime).getUTCFullYear()}-${String(id).padStart(3, '0')}`, issueDetails: o.description, clientId: 1, companyId: DEMO_PROVIDER_ID,
+    priority: 'medium', urgency: 'normal', isEmergency: false, scheduledDate: null, timeSlot: '', desiredCompletionDate: null, actualCompletionDate: null,
+    customerFeedbackRating: null, assignedTechnicianId: null, ...o
+  });
+  const serviceRequests = [
+    sr(1, { title: 'Diagnóstico de temperatura irregular', description: 'Temperatura irregular en la congeladora.', requestTime: '2023-04-15T09:30:00.000Z', status: 'completed', priority: 'high', urgency: 'urgent', equipmentId: 1, assignedTechnicianId: 2, serviceType: 'Diagnostic', timeSlot: '08:00 - 10:00', serviceAddress: 'Warehouse #3, Sector A', scheduledDate: '2023-04-18T08:00:00.000Z', actualCompletionDate: '2023-04-18T11:00:00.000Z', customerFeedbackRating: 2 }),
+    sr(2, { title: 'Mantenimiento de rutina de la cámara', description: 'Revisión de mantenimiento de rutina para la cámara fría.', requestTime: '2023-04-18T14:20:00.000Z', status: 'completed', equipmentId: 2, assignedTechnicianId: 1, serviceType: 'PreventiveMaintenance', timeSlot: '10:00 - 12:00', serviceAddress: 'Av. Larco 1301, Miraflores, Lima', scheduledDate: '2023-04-20T10:00:00.000Z', actualCompletionDate: '2023-04-20T12:30:00.000Z', customerFeedbackRating: 5 }),
+    sr(3, { title: 'Reemplazo de compresor del refrigerador', description: 'Reemplazar el compresor del refrigerador MR-100; ya no enfría bien.', requestTime: ago(2 * D), status: 'pending', equipmentId: 3, serviceType: 'CorrectiveMaintenance', serviceAddress: 'Av. Grau 150, Barranco, Lima', scheduledDate: ahead(4 * D), timeSlot: '14:00 - 16:00' }),
+    sr(4, { title: 'Sello de puerta del refrigerador', description: 'La puerta del DR-220 no cierra bien y la temperatura sube.', requestTime: ago(1.5 * D), status: 'accepted', priority: 'high', urgency: 'urgent', equipmentId: 6, assignedTechnicianId: 1, serviceType: 'CorrectiveMaintenance', serviceAddress: 'Av. Larco 1301, Miraflores, Lima', scheduledDate: ahead(1 * D), timeSlot: '08:00 - 10:00' }),
+    sr(5, { title: 'Cambio de ventilador del evaporador', description: 'El ventilador del evaporador de la cámara WF-150 hace ruido.', requestTime: ago(3 * D), status: 'in_progress', equipmentId: 7, assignedTechnicianId: 2, serviceType: 'CorrectiveMaintenance', serviceAddress: 'Av. Javier Prado Este 6000, La Molina, Lima', scheduledDate: ago(0.5 * D), timeSlot: '10:00 - 12:00' }),
+    sr(6, { title: 'Mantenimiento preventivo del congelador médico', description: 'Mantenimiento preventivo trimestral del congelador XK-500.', requestTime: ago(6 * D), status: 'resolved', equipmentId: 4, assignedTechnicianId: 1, serviceType: 'PreventiveMaintenance', serviceAddress: 'Av. Primavera 1050, Santiago de Surco, Lima', scheduledDate: ago(3 * D), timeSlot: '08:00 - 10:00', actualCompletionDate: ago(3 * D) }),
+    sr(7, { title: 'Revisión del consumo de energía', description: 'Consumo de energía elevado en la cámara CR-300.', requestTime: ago(9 * D), status: 'resolved', equipmentId: 5, assignedTechnicianId: 2, serviceType: 'Diagnostic', serviceAddress: 'Av. Javier Prado Este 6000, La Molina, Lima', scheduledDate: ago(7 * D), timeSlot: '14:00 - 16:00', actualCompletionDate: ago(7 * D), customerFeedbackRating: 4 }),
+    sr(8, { title: 'Instalación de congeladora de postres', description: 'Instalación y puesta en marcha de la congeladora IC-300.', requestTime: ago(12 * D), status: 'cancelled', equipmentId: 10, serviceType: 'Installation', serviceAddress: 'Av. Javier Prado Este 4200, San Isidro, Lima' }),
+    sr(9, { title: 'Reparación del frigobar', description: 'El frigobar BF-60 no enciende; falla del compresor.', requestTime: ago(6 * D), status: 'rejected', equipmentId: 9, serviceType: 'CorrectiveMaintenance', serviceAddress: 'Av. Grau 150, Barranco, Lima' }),
+    sr(10, { title: 'Emergencia: congeladora XK-400 caliente', description: 'La congeladora XK-400 llegó a -12 °C y hay mercadería en riesgo.', requestTime: ago(0.4 * H), status: 'pending', priority: 'critical', urgency: 'emergency', isEmergency: true, equipmentId: 1, serviceType: 'CorrectiveMaintenance', serviceAddress: 'Av. Javier Prado Este 4200, San Isidro, Lima', scheduledDate: ahead(0.2 * D), timeSlot: '08:00 - 10:00' })
+  ];
+
+  const wo = (id, o) => ({
+    id, workOrderNumber: `WO-${new Date(o.creationTime).getUTCFullYear()}-${String(id).padStart(4, '0')}`, serviceRequestId: null, issueDetails: o.description,
+    assignedTechnicianId: null, scheduledDate: null, timeSlot: '', serviceAddress: '', desiredCompletionDate: null, actualCompletionDate: null,
+    resolutionDetails: '', technicianNotes: '', cost: null, customerFeedbackRating: null, feedbackSubmissionDate: null, ...o
+  });
+  const workOrders = [
+    wo(1, { title: 'Revisión Preventiva Sistema Enfriamiento A-300', issueDetails: 'El equipo supera el máximo recomendado desde hace dos días.', description: 'Realizar mantenimiento preventivo y revisión de componentes del sistema de enfriamiento.', serviceRequestId: 4, equipmentId: 6, assignedTechnicianId: 1, status: 'assigned', priority: 'medium', serviceType: 'Maintenance', creationTime: ago(1.2 * D), scheduledDate: ahead(1 * D), timeSlot: '08:00 - 10:00', serviceAddress: 'Av. Larco 1301, Miraflores, Lima' }),
+    wo(2, { title: 'Diagnóstico y Reparación Máquina B-500', issueDetails: 'Fallas intermitentes y ruidos reportados por el personal de cocina.', description: 'Diagnosticar y reparar fallas intermitentes y ruidos en la máquina de producción.', equipmentId: 3, status: 'created', priority: 'high', serviceType: 'Repair', creationTime: ago(1 * D), serviceAddress: 'Av. Grau 150, Barranco, Lima' }),
+    wo(3, { title: 'Cambio de ventilador del evaporador WF-150', issueDetails: 'El ventilador vibra y el desescarche no completa el ciclo.', description: 'Reemplazar el ventilador del evaporador y verificar el desescarche.', serviceRequestId: 5, equipmentId: 7, assignedTechnicianId: 2, status: 'in_progress', priority: 'medium', serviceType: 'Repair', creationTime: ago(2.5 * D), scheduledDate: ago(0.5 * D), timeSlot: '10:00 - 12:00', serviceAddress: 'Av. Javier Prado Este 6000, La Molina, Lima', technicianNotes: 'Repuesto instalado, falta calibrar el termostato.' }),
+    wo(4, { title: 'Emergencia congeladora XK-400', issueDetails: 'Temperatura interna en -12 °C, 8 °C por encima del rango; hay mercadería en riesgo.', description: 'Evaluar falla de enfriamiento y proteger la mercadería almacenada.', serviceRequestId: 10, equipmentId: 1, assignedTechnicianId: 3, status: 'on_hold', priority: 'critical', serviceType: 'Emergency', creationTime: ago(0.3 * H), scheduledDate: ahead(0.2 * D), timeSlot: '08:00 - 10:00', serviceAddress: 'Av. Javier Prado Este 4200, San Isidro, Lima', technicianNotes: 'En espera del repuesto del compresor.' }),
+    wo(5, { title: 'Mantenimiento preventivo XK-500', issueDetails: 'Mantenimiento trimestral programado según el plan.', description: 'Limpieza de condensador, revisión de sellos y calibración.', serviceRequestId: 6, equipmentId: 4, assignedTechnicianId: 1, status: 'resolved', priority: 'low', serviceType: 'Maintenance', creationTime: ago(6 * D), scheduledDate: ago(3 * D), timeSlot: '08:00 - 10:00', serviceAddress: 'Av. Primavera 1050, Santiago de Surco, Lima', actualCompletionDate: ago(3 * D), resolutionDetails: 'Condensador limpio, sellos en buen estado, temperatura calibrada.', technicianNotes: 'Sin novedades.', cost: 180 }),
+    wo(6, { title: 'Inspección de consumo de energía CR-300', issueDetails: 'Consumo sostenido 25 % por encima del promedio histórico.', description: 'Medir consumo y revisar el compresor de la cámara.', serviceRequestId: 7, equipmentId: 5, assignedTechnicianId: 2, status: 'completed', priority: 'medium', serviceType: 'Inspection', creationTime: ago(9 * D), scheduledDate: ago(7 * D), timeSlot: '14:00 - 16:00', serviceAddress: 'Av. Javier Prado Este 6000, La Molina, Lima', actualCompletionDate: ago(7 * D), resolutionDetails: 'Se reemplazó el contactor del compresor.', technicianNotes: 'Consumo normalizado.', cost: 95, customerFeedbackRating: 4, feedbackSubmissionDate: ago(6.5 * D) })
+  ];
+
+  const maintenance = [
+    { id: 1, date: '2026-03-10T14:00:00.000Z', type: 'preventive', status: 'completed', notes: 'Filter cleaning, general inspection', technicianId: 1, equipmentId: 1, nextScheduledDate: '2026-06-10' },
+    { id: 2, date: '2026-04-20T10:00:00.000Z', type: 'preventive', status: 'completed', notes: 'Cold room maintenance, temperature calibration', technicianId: 1, equipmentId: 2, nextScheduledDate: '2026-07-20' },
+    { id: 3, date: ahead(4 * D), type: 'corrective', status: 'scheduled', notes: 'Replace refrigerator compressor', technicianId: 1, equipmentId: 3, nextScheduledDate: null }
+  ];
+  return { notifications, technicians, serviceRequests, workOrders, maintenance };
+}
