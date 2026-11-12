@@ -1,0 +1,15 @@
+/* Technician portal look: dark slate topbar, big touch targets, bottom tab bar on phones, side rail on desktop.
+   Colours come from the shared --op-* tokens; structure is intentionally different from the owner/provider shell. */
+.tp-shell { --tp-ink: #12303f; --tp-ink-soft: #1c4458; --tp-accent: #f59e0b; min-height: 100vh; background: var(--op-bg); display: flex; flex-direction: column; }
+.tp-page-head { margin-bottom: var(--op-space-4); }
+.tp-page-head h1 { font-size: 1.5rem; color: var(--op-text-strong); line-height: 1.2; }
+.tp-page-head p { color: var(--op-text-muted); font-size: 0.95rem; margin-top: 2px; }
+.tp-back { display: inline-flex; align-items: center; gap: var(--op-space-2); color: var(--op-brand); font-weight: 600; text-decoration: none; margin-bottom: var(--op-space-3); min-height: 44px; }
+.tp-card { background: var(--op-surface); border: 1px solid var(--op-border); border-radius: var(--op-radius-lg); padding: var(--op-space-4); box-shadow: var(--op-shadow-sm); }
+.tp-section-title { font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--op-text-muted); font-weight: 700; margin: var(--op-space-5) 0 var(--op-space-2); }
+.tp-stack { display: flex; flex-direction: column; gap: var(--op-space-3); }
+.tp-grid { display: grid; gap: var(--op-space-3); grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.tp-meta { display: flex; flex-wrap: wrap; gap: var(--op-space-2) var(--op-space-4); color: var(--op-text-muted); font-size: 0.88rem; }
+.tp-meta i { margin-right: 4px; }
+.tp-row { display: flex; align-items: center; justify-content: space-between; gap: var(--op-space-3); flex-wrap: wrap; }
+.tp-btn-block { width: 100%; min-height: 48px; }

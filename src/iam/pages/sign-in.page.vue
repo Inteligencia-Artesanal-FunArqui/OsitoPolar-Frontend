@@ -55,7 +55,7 @@ export default {
 
         // Delay navigation to show toast
         setTimeout(() => {
-          this.$router.push(resolvePostLoginTarget(this.$route.query.redirect));
+          this.$router.push(response.userType === 'Technician' ? { name: 'technician-today' } : resolvePostLoginTarget(this.$route.query.redirect));
         }, 1000);
       } catch (error) {
         this.$toast.add({

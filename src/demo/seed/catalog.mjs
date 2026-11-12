@@ -34,7 +34,14 @@ export const DEMO_PROVIDER_ID = 3;
 // Demo accounts. Passwords never leave this module; `login` is what the sign-in form sends as username.
 export const accounts = [
   { id: 1, login: 'pedro@demo.local', username: 'Pedro', userType: 'Owner', profileId: 1, balance: 250.0, planId: 2, maxUnits: 12, email: 'pedro@demo.local', memberSince: '2025-03-12' },
-  { id: 2, login: 'tecnofrio@demo.local', username: 'TecnoFrio', userType: 'Provider', profileId: 2, balance: 1280.5, planId: 5, maxClients: 30, companyName: 'TecnoFrio S.A.C.', taxId: '20512345678', email: 'info@tecnofrio.com', memberSince: '2024-08-01' }
+  { id: 2, login: 'tecnofrio@demo.local', username: 'TecnoFrio', userType: 'Provider', profileId: 2, balance: 1280.5, planId: 5, maxClients: 30, companyName: 'TecnoFrio S.A.C.', taxId: '20512345678', email: 'info@tecnofrio.com', memberSince: '2024-08-01' },
+  // Female demo users: Lucía (Owner) and Carmen (Provider).
+  { id: 5, login: 'lucia@demo.local', username: 'Lucía', userType: 'Owner', profileId: 3, balance: 180.0, planId: 3, maxUnits: 24, email: 'lucia@demo.local', memberSince: '2025-06-20' },
+  { id: 6, login: 'carmen@demo.local', username: 'Carmen', userType: 'Provider', profileId: 4, balance: 940.0, planId: 6, maxClients: 60, companyName: 'FríoSur E.I.R.L.', taxId: '20598765432', email: 'carmen@demo.local', memberSince: '2024-11-05' },
+  // Technician logins (field staff of TecnoFrio). The real backend only has Owner/Provider types, so this is a demo-only
+  // third type; `technicianId` points at the row in state.technicians that owns the work orders.
+  { id: 7, login: 'ana.tecnica@demo.local', username: 'Ana García', userType: 'Technician', technicianId: 2, profileId: 2, companyName: 'TecnoFrio S.A.C.', email: 'ana@tecnico.com', memberSince: '2025-01-15' },
+  { id: 8, login: 'rosa.tecnica@demo.local', username: 'Rosa Paredes', userType: 'Technician', technicianId: 4, profileId: 4, companyName: 'TecnoFrio S.A.C.', email: 'rosa@tecnico.com', memberSince: '2025-09-01' }
 ];
 export const DEMO_PASSWORD = 'Demo123!';
 

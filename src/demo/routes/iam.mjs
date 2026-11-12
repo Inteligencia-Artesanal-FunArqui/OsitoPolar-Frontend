@@ -9,14 +9,28 @@ const signIn = ({ body }) => {
   const login = String(body.username ?? '').trim().toLowerCase();
   if (!login || !body.password) fail(400, 'Usuario y contraseña son obligatorios.');
   const acc = accounts.find(a => a.login === login);
-  if (!acc || body.password !== DEMO_PASSWORD) fail(401, 'Usa pedro@demo.local o tecnofrio@demo.local con la contraseña Demo123!.');
+  if (!acc || body.password !== DEMO_PASSWORD) fail(401, 'Usuario o contraseña incorrectos.');
+  // The token carries the account id so technician routes know who is asking (see routes/technician.mjs). Not a real JWT, obviously.
+  const token = `demo-only-${acc.id}`;
+  if (acc.userType === 'Technician') return { id: acc.id, username: acc.username, token, userType: acc.userType, profileId: acc.profileId, technicianId: acc.technicianId, companyName: acc.companyName };
   // real backend sign-in payloads: Owner {…maxUnits} / Provider {…maxClients, companyName}
-  const common = { id: acc.id, username: acc.username, token: 'demo-only-not-a-real-token', userType: acc.userType, profileId: acc.profileId, balance: acc.balance, planId: acc.planId };
+  const common = { id: acc.id, username: acc.username, token, userType: acc.userType, profileId: acc.profileId, balance: acc.balance, planId: acc.planId };
   return acc.userType === 'Owner' ? { ...common, maxUnits: acc.maxUnits } : { ...common, maxClients: acc.maxClients, companyName: acc.companyName };
 };
 
 /** Real UserResource shape; counters come from live state. */
+const technicianResource = (state, acc) => {
+  const tech = state.technicians.find(t => t.id === acc.technicianId);
+  const mine = state.workOrders.filter(w => w.assignedTechnicianId === acc.technicianId);
+  return {
+    id: acc.id, username: acc.username, userType: 'Technician', email: acc.email, memberSince: acc.memberSince, twoFactorEnabled: false, ownerProfile: null, providerProfile: null,
+    technicianProfile: { technicianId: acc.technicianId, name: tech?.name ?? acc.username, specialization: tech?.specialization ?? '', phone: tech?.phone ?? '', averageRating: tech?.averageRating ?? 0, availability: tech?.availability ?? 'Available', companyName: acc.companyName,
+      activeOrders: mine.filter(w => ['assigned', 'in_progress', 'on_hold'].includes(w.status)).length, completedOrders: mine.filter(w => ['completed', 'resolved'].includes(w.status)).length }
+  };
+};
+
 const userResource = (state, acc) => {
+  if (acc.userType === 'Technician') return technicianResource(state, acc);
   const open = state.serviceRequests.filter(r => OPEN.includes(r.status)).length;
   const p = plan(acc.planId);
   const owner = acc.userType === 'Owner';
@@ -27,11 +41,11 @@ const userResource = (state, acc) => {
   };
 };
 
-const paymentNeeded = () => fail(403, 'Los cambios de plan requieren un pago, desactivado en esta demostración.');
+const paymentNeeded = () => fail(403, 'Los cambios de plan requieren un pago, no están disponibles para su cuenta en este momento.');
 
 export default [
   ['POST', '/authentication/sign-in', signIn],
-  ['POST', '/authentication/sign-up', () => fail(403, 'El registro está desactivado en esta demostración.')],
+  ['POST', '/authentication/sign-up', () => fail(403, 'El registro no está disponible en este momento.')],
   ['GET', '/users', ({ state }) => [...accounts.map(a => ({ id: a.id, username: a.username, userType: null, ownerProfile: null, providerProfile: null })),
     ...state.users.map(u => ({ id: u.id, username: u.username, userType: null, ownerProfile: null, providerProfile: null }))]],
   ['GET', '/users/:id', ({ state, params }) => {

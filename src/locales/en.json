@@ -762,7 +762,126 @@
       "critical": "Critical"
     }
   },
+  "technician": {
+    "brand": "Technician portal",
+    "company": "TecnoFrio S.A.C.",
+    "nav": {
+      "label": "Technician portal navigation",
+      "today": "My day",
+      "orders": "My orders",
+      "equipment": "Equipment",
+      "inventory": "Inventory",
+      "profile": "My profile",
+      "signOut": "Sign out"
+    },
+    "common": {
+      "loading": "Loading...",
+      "errorTitle": "Could not load the information",
+      "errorMessage": "Please try again in a few seconds.",
+      "scheduled": "Scheduled",
+      "noDate": "No date",
+      "timeSlot": "Time slot",
+      "address": "Address",
+      "equipment": "Equipment",
+      "viewOrder": "View order",
+      "back": "Back"
+    },
+    "today": {
+      "title": "My day",
+      "greeting": "Hi, {name}",
+      "subtitle": "Here is what you have for today.",
+      "dueToday": "Due today",
+      "nothingToday": "No pending visits",
+      "nothingTodayMessage": "You have no open orders for today. Nice work.",
+      "nextVisit": "Next visit",
+      "noNextVisit": "No upcoming visits scheduled.",
+      "rating": "Rating",
+      "completedMonth": "Completed this month",
+      "byStatus": "My orders by status",
+      "total": "Total"
+    },
+    "orders": {
+      "title": "My orders",
+      "subtitle": "Work orders assigned to you.",
+      "filterLabel": "Filter by status",
+      "all": "All",
+      "emptyTitle": "No orders",
+      "emptyMessage": "There are no orders with this status."
+    },
+    "detail": {
+      "title": "Work order",
+      "issue": "Reported issue",
+      "description": "Work to perform",
+      "checklist": "Visit checklist",
+      "checklistProgress": "{done} of {total} steps",
+      "notes": "Technician notes",
+      "notesPlaceholder": "Write down what you found and what you did...",
+      "saveNotes": "Save notes",
+      "resolution": "Work summary",
+      "resolutionPlaceholder": "Summary for the customer (optional)",
+      "start": "Start work",
+      "finish": "Finish order",
+      "hold": "Put on hold",
+      "resume": "Resume",
+      "closedInfo": "This order is closed and can no longer be edited.",
+      "completedOn": "Closed on",
+      "started": "Work started.",
+      "finished": "Order finished.",
+      "onHold": "Order on hold.",
+      "resumed": "Work resumed.",
+      "notesSaved": "Notes saved.",
+      "updateFailed": "Could not update the order",
+      "notFound": "We could not find this order among your assignments."
+    },
+    "equipment": {
+      "title": "Assigned equipment",
+      "subtitle": "Units from your work orders.",
+      "emptyTitle": "No equipment",
+      "emptyMessage": "You have no assigned equipment yet.",
+      "temperature": "Current temperature",
+      "setpoint": "Set point",
+      "range": "Optimal range",
+      "serial": "Serial",
+      "openOrders": "Open orders",
+      "lastService": "Last service",
+      "never": "No closed services"
+    },
+    "inventory": {
+      "title": "Inventory and tools",
+      "subtitle": "Your field stock (demo data).",
+      "tools": "Tools",
+      "parts": "Parts and consumables",
+      "lowStock": "Low stock",
+      "quantity": "Quantity",
+      "minimum": "Minimum",
+      "emptyTitle": "No inventory",
+      "emptyMessage": "You have no tools or parts on record."
+    },
+    "profile": {
+      "title": "My profile",
+      "subtitle": "Your technician details.",
+      "name": "Name",
+      "specialization": "Specialization",
+      "phone": "Phone",
+      "email": "Email",
+      "company": "Company",
+      "availability": "Availability",
+      "rating": "Average rating",
+      "member": "With the company since",
+      "active": "Active orders",
+      "done": "Completed orders",
+      "history": "Work history",
+      "historyEmpty": "You have no closed jobs yet.",
+      "cost": "Cost"
+    }
+  },
   "routeTitle": {
+    "technician-today": "My day",
+    "technician-orders": "My orders",
+    "technician-order-detail": "Work order",
+    "technician-equipment": "Assigned equipment",
+    "technician-inventory": "Inventory",
+    "technician-profile": "My profile",
     "home": "Home",
     "about": "About us",
     "sign-in": "Sign in",
@@ -919,8 +1038,8 @@
     "centeredOnYou": "Map centered on your location",
     "centeredOn": "Map centered on {name}",
     "location": "Location",
-    "demoNote": "Demo locations. The external map is disabled.",
+    "demoNote": "Map of your equipment locations.",
     "iframeTitle": "Map showing {count} equipment locations",
-    "demoLocation": "Demo location"
+    "demoLocation": "Lima, Peru"
   }
 }

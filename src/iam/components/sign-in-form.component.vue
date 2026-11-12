@@ -73,13 +73,6 @@ export default {
       <p class="form-subtitle">{{ $t('auth.signInSubtitle') }}</p>
     </div>
 
-    <pv-message v-if="isDemo" severity="info" :closable="false" class="demo-hint">
-      <div class="demo-hint__body">
-        <span>{{ $t('auth.demoHint') }}</span>
-        <pv-button type="button" :label="$t('auth.useDemo')" icon="pi pi-bolt" size="small" severity="secondary" outlined @click="fillDemoCredentials" />
-      </div>
-    </pv-message>
-
     <div class="field">
       <label for="username" class="field-label">{{ $t('auth.username') }}</label>
       <pv-input-text

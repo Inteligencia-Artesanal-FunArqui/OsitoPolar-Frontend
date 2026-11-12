@@ -16,7 +16,8 @@ export class AuthResponse {
                     userType = null,
                     companyName = null,
                     profileId = null,
-                    planId = null
+                    planId = null,
+                    technicianId = null
                 } = {}) {
         this.id = id;
         this.username = username;
@@ -26,5 +27,7 @@ export class AuthResponse {
         this.companyName = companyName;
         this.profileId = profileId;
         this.planId = planId;
+        // demo-only Technician login: row id in the technicians collection
+        this.technicianId = technicianId;
     }
 }

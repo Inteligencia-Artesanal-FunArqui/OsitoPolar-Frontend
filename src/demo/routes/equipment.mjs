@@ -30,7 +30,7 @@ function create({ state, body }) {
   const id = nextId(state.equipment);
   const [set, min, max] = DEFAULTS[type];
   const item = {
-    id, name: body.name.trim(), type, model: '', manufacturer: '', serialNumber: `DEMO-${id}`, code: `EQ-${String(id).padStart(3, '0')}`, cost: 0, technicalDetails: '',
+    id, name: body.name.trim(), type, model: '', manufacturer: '', serialNumber: `SN-${String(id).padStart(5, '0')}`, code: `EQ-${String(id).padStart(3, '0')}`, cost: 0, technicalDetails: '',
     status: 'Active', isPoweredOn: true, installationDate: new Date().toISOString().slice(0, 10), notes: '', currentTemperature: set, setTemperature: set,
     optimalTemperatureMin: min, optimalTemperatureMax: max, locationName: '', locationAddress: '', locationLatitude: 0, locationLongitude: 0,
     energyConsumptionCurrent: 0, energyConsumptionUnit: 'watts', energyConsumptionAverage: 0, ownerId: Number(body.ownerId) || 1, ownerType: 'Owner', ownershipType: 'Owned'

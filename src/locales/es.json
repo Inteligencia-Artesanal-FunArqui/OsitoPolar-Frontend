@@ -762,7 +762,126 @@
       "critical": "Crítica"
     }
   },
+  "technician": {
+    "brand": "Portal técnico",
+    "company": "TecnoFrio S.A.C.",
+    "nav": {
+      "label": "Navegación del portal técnico",
+      "today": "Mi jornada",
+      "orders": "Mis órdenes",
+      "equipment": "Equipos",
+      "inventory": "Inventario",
+      "profile": "Mi perfil",
+      "signOut": "Salir"
+    },
+    "common": {
+      "loading": "Cargando...",
+      "errorTitle": "No se pudo cargar la información",
+      "errorMessage": "Inténtalo de nuevo en unos segundos.",
+      "scheduled": "Programada",
+      "noDate": "Sin fecha",
+      "timeSlot": "Horario",
+      "address": "Dirección",
+      "equipment": "Equipo",
+      "viewOrder": "Ver orden",
+      "back": "Volver"
+    },
+    "today": {
+      "title": "Mi jornada",
+      "greeting": "Hola, {name}",
+      "subtitle": "Esto es lo que tienes para hoy.",
+      "dueToday": "Pendiente para hoy",
+      "nothingToday": "Sin visitas pendientes",
+      "nothingTodayMessage": "No tienes órdenes abiertas para hoy. Buen trabajo.",
+      "nextVisit": "Próxima visita",
+      "noNextVisit": "No hay visitas futuras programadas.",
+      "rating": "Calificación",
+      "completedMonth": "Completadas este mes",
+      "byStatus": "Mis órdenes por estado",
+      "total": "Total"
+    },
+    "orders": {
+      "title": "Mis órdenes",
+      "subtitle": "Órdenes de trabajo asignadas a ti.",
+      "filterLabel": "Filtrar por estado",
+      "all": "Todas",
+      "emptyTitle": "Sin órdenes",
+      "emptyMessage": "No hay órdenes con este estado."
+    },
+    "detail": {
+      "title": "Orden de trabajo",
+      "issue": "Problema reportado",
+      "description": "Trabajo a realizar",
+      "checklist": "Checklist de la visita",
+      "checklistProgress": "{done} de {total} pasos",
+      "notes": "Notas del técnico",
+      "notesPlaceholder": "Anota lo que encontraste y lo que hiciste...",
+      "saveNotes": "Guardar notas",
+      "resolution": "Resumen del trabajo",
+      "resolutionPlaceholder": "Resumen para el cliente (opcional)",
+      "start": "Iniciar trabajo",
+      "finish": "Finalizar orden",
+      "hold": "Poner en espera",
+      "resume": "Reanudar",
+      "closedInfo": "Esta orden está cerrada y ya no se puede editar.",
+      "completedOn": "Cerrada el",
+      "started": "Trabajo iniciado.",
+      "finished": "Orden finalizada.",
+      "onHold": "Orden en espera.",
+      "resumed": "Trabajo reanudado.",
+      "notesSaved": "Notas guardadas.",
+      "updateFailed": "No se pudo actualizar la orden",
+      "notFound": "No encontramos esta orden entre tus asignaciones."
+    },
+    "equipment": {
+      "title": "Equipos asignados",
+      "subtitle": "Unidades de tus órdenes de trabajo.",
+      "emptyTitle": "Sin equipos",
+      "emptyMessage": "Aún no tienes equipos asignados.",
+      "temperature": "Temperatura actual",
+      "setpoint": "Programada",
+      "range": "Rango óptimo",
+      "serial": "Serie",
+      "openOrders": "Órdenes abiertas",
+      "lastService": "Último servicio",
+      "never": "Sin servicios cerrados"
+    },
+    "inventory": {
+      "title": "Inventario y herramientas",
+      "subtitle": "Tu stock de campo (datos de demostración).",
+      "tools": "Herramientas",
+      "parts": "Repuestos y consumibles",
+      "lowStock": "Stock bajo",
+      "quantity": "Cantidad",
+      "minimum": "Mínimo",
+      "emptyTitle": "Sin inventario",
+      "emptyMessage": "No tienes herramientas ni repuestos registrados."
+    },
+    "profile": {
+      "title": "Mi perfil",
+      "subtitle": "Tus datos como técnico.",
+      "name": "Nombre",
+      "specialization": "Especialidad",
+      "phone": "Teléfono",
+      "email": "Correo",
+      "company": "Empresa",
+      "availability": "Disponibilidad",
+      "rating": "Calificación promedio",
+      "member": "En la empresa desde",
+      "active": "Órdenes activas",
+      "done": "Órdenes completadas",
+      "history": "Historial de trabajos",
+      "historyEmpty": "Aún no tienes trabajos cerrados.",
+      "cost": "Costo"
+    }
+  },
   "routeTitle": {
+    "technician-today": "Mi jornada",
+    "technician-orders": "Mis órdenes",
+    "technician-order-detail": "Orden de trabajo",
+    "technician-equipment": "Equipos asignados",
+    "technician-inventory": "Inventario",
+    "technician-profile": "Mi perfil",
     "home": "Inicio",
     "about": "Nosotros",
     "sign-in": "Iniciar sesión",
@@ -919,8 +1038,8 @@
     "centeredOnYou": "Mapa centrado en tu ubicación",
     "centeredOn": "Mapa centrado en {name}",
     "location": "Ubicación",
-    "demoNote": "Ubicaciones de demostración. El mapa externo está desactivado.",
+    "demoNote": "Mapa de ubicaciones de sus equipos.",
     "iframeTitle": "Mapa con {count} ubicaciones de equipos",
-    "demoLocation": "Ubicación de demostración"
+    "demoLocation": "Lima, Perú"
   }
 }

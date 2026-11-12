@@ -242,7 +242,6 @@ export default {
       <i v-if="!isSubmitting" class="pi pi-arrow-right"></i>
       <div v-else class="button-spinner"></div>
     </button>
-    <p v-if="isDemo" class="demo-note"><i class="pi pi-info-circle" aria-hidden="true"></i> {{ $t('rental.summary.demoNote') }}</p>
   </div>
 </template>
 

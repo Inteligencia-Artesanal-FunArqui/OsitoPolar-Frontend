@@ -8,12 +8,13 @@ import notifications from './routes/notifications.mjs';
 import serviceRequests from './routes/service-requests.mjs';
 import fieldOperations from './routes/field-operations.mjs';
 import rental from './routes/rental.mjs';
+import technician from './routes/technician.mjs';
 import legacy from './routes/legacy.mjs';
 
 export const STORAGE_KEY = 'ositopolar-vue-demo-state';
 const LEGACY_KEYS = ['ositopolar-vue-demo-v1']; // v1 state (equipment/notifications/requests only): dropped, we reseed
-const COLLECTIONS = ['users', 'equipment', 'notifications', 'serviceRequests', 'technicians', 'workOrders', 'rentalEquipment', 'rentalPricing', 'rentalRequests', 'readings', 'maintenance', 'plans', 'providerPlans', 'providers', 'companies', 'rentalContracts', 'rentalPayments'];
-const routes = compileRoutes([...iam, ...equipment, ...notifications, ...serviceRequests, ...fieldOperations, ...rental, ...legacy]);
+const COLLECTIONS = ['users', 'equipment', 'notifications', 'serviceRequests', 'technicians', 'workOrders', 'rentalEquipment', 'rentalPricing', 'rentalRequests', 'readings', 'maintenance', 'plans', 'providerPlans', 'providers', 'companies', 'rentalContracts', 'rentalPayments', 'technicianInventory'];
+const routes = compileRoutes([...iam, ...equipment, ...notifications, ...serviceRequests, ...fieldOperations, ...technician, ...rental, ...legacy]);
 
 /** Forget the saved demo state (next adapter / page load reseeds). */
 export function resetDemoState(storage) {
@@ -40,7 +41,7 @@ export function createDemoAdapter({ storage } = {}) {
     const response = (data, status = 200) => ({ data: clone(data), status, statusText: status === 201 ? 'Created' : 'OK', headers: {}, config, request: { demo: true } });
     const reject = (message, status = 404) => { const error = new Error(message); error.isAxiosError = true; error.config = config; error.response = { ...response({ message }, status), statusText: 'Demo request rejected' }; throw error; };
     const rawUrl = config.url || '';
-    if (/^[a-z][a-z\d+.-]*:/i.test(rawUrl) || rawUrl.startsWith('//')) return reject('URL externa bloqueada en modo de demostración.');
+    if (/^[a-z][a-z\d+.-]*:/i.test(rawUrl) || rawUrl.startsWith('//')) return reject('Recurso externo no disponible.');
     const url = new URL(rawUrl || '/', 'http://demo.local');
     // routes.json mirror: /api/v1/* -> /$1 ; the real backend spells work orders /work-orders
     const path = (url.pathname.replace(/^\/api\/v1/, '').replace(/\/$/, '') || '/').replace(/^\/work-orders/, '/workOrders')
@@ -51,9 +52,9 @@ export function createDemoAdapter({ storage } = {}) {
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return reject('JSON inválido.', 400); } }
     if (!body || typeof body !== 'object' || Array.isArray(body)) return reject('Objeto de datos inválido.', 400);
     if (BLOCKED.test(path)) return reject('Pagos, registro externo y Stripe desactivados en esta demostración.', 403);
-    if (method === 'POST' && path === '/authentication/sign-up') return reject('El registro está desactivado en esta demostración.', 403);
+    if (method === 'POST' && path === '/authentication/sign-up') return reject('El registro no está disponible en este momento.', 403);
     const hit = matchRoute(routes, method, path);
-    if (!hit) return reject(`Operación no incluida en la demostración: ${method} ${path}`);
+    if (!hit) return reject(`Operación no disponible: ${method} ${path}`);
     const query = key => url.searchParams.get(key) ?? config.params?.[key];
     try {
       const out = hit.handler({ state, params: hit.params, query, body, now: new Date(), config });

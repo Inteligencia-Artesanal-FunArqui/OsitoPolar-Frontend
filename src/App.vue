@@ -8,11 +8,16 @@ import FooterComponent from "./public/components/footer-content.component.vue";
 
 export default {
   name: 'App',
-  components: { Navbar, FooterComponent }
+  components: { Navbar, FooterComponent },
+  // the technician portal ships its own shell, so the owner/provider chrome stays out of its way
+  computed: { ownShell() { return this.$route.meta?.role === 'technician'; } }
 }
 </script>
 
 <template>
+  <router-view v-if="ownShell" />
+
+  <template v-else>
   <Navbar />
 
   <main id="main-content" tabindex="-1">
@@ -22,6 +27,7 @@ export default {
   </main>
 
   <FooterComponent />
+  </template>
 
   <!-- one shared instance: pages just call this.$toast / this.$confirm -->
   <pv-toast position="top-right" />

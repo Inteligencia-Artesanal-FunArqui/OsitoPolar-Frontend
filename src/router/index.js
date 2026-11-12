@@ -6,6 +6,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import authService from "../iam/services/auth.service.js";
 import i18n from "../i18n.js";
+import { roleRedirect } from "./role-guard.js";
 
 /**
  * @description Lazy-loaded component imports for route configuration
@@ -31,6 +32,13 @@ const PlansComponent          = () => import('../subscriptions/pages/plans.compo
 const WorkOrderListComponent = () => import('../field-operations/pages/work-order-list.component.vue');
 const NewWorkOrderComponent = () => import('../field-operations/pages/new-work-order.component.vue');
 const TechnicianListComponent = () => import('../field-operations/pages/technician-list.component.vue');
+const TechnicianLayout = () => import('../technician-portal/components/technician-layout.component.vue');
+const TechnicianTodayPage = () => import('../technician-portal/pages/technician-today.page.vue');
+const TechnicianOrdersPage = () => import('../technician-portal/pages/technician-orders.page.vue');
+const TechnicianOrderDetailPage = () => import('../technician-portal/pages/technician-order-detail.page.vue');
+const TechnicianEquipmentPage = () => import('../technician-portal/pages/technician-equipment.page.vue');
+const TechnicianInventoryPage = () => import('../technician-portal/pages/technician-inventory.page.vue');
+const TechnicianProfilePage = () => import('../technician-portal/pages/technician-profile.page.vue');
 const CompanyServiceRequestsListComponent = () => import('../service/pages/company-service-requests-list.component.vue');
 
 /**
@@ -179,6 +187,21 @@ const routes = [
         meta: { title: 'Technicians', requiresAuth: true }
     },
 
+    // Technician portal: own shell (layout renders its own topbar + nav), only for Technician accounts
+    {
+        path: '/technician',
+        component: TechnicianLayout,
+        meta: { requiresAuth: true, role: 'technician' },
+        children: [
+            { path: '', name: 'technician-today', component: TechnicianTodayPage, meta: { title: 'My day', requiresAuth: true, role: 'technician' } },
+            { path: 'orders', name: 'technician-orders', component: TechnicianOrdersPage, meta: { title: 'My orders', requiresAuth: true, role: 'technician' } },
+            { path: 'orders/:id', name: 'technician-order-detail', component: TechnicianOrderDetailPage, meta: { title: 'Work order', requiresAuth: true, role: 'technician' } },
+            { path: 'equipment', name: 'technician-equipment', component: TechnicianEquipmentPage, meta: { title: 'Assigned equipment', requiresAuth: true, role: 'technician' } },
+            { path: 'inventory', name: 'technician-inventory', component: TechnicianInventoryPage, meta: { title: 'Tools and parts', requiresAuth: true, role: 'technician' } },
+            { path: 'profile', name: 'technician-profile', component: TechnicianProfilePage, meta: { title: 'My profile', requiresAuth: true, role: 'technician' } }
+        ]
+    },
+
     // Default route
     {
         path: '/',
@@ -232,6 +255,10 @@ router.beforeEach((to, from, next) => {
             name: 'sign-in',
             query: { redirect: to.fullPath } // Save intended destination
         });
+    }
+    // Role rules: technicians stay in /technician, everyone else stays out of it
+    else if (isAuthenticated && roleRedirect(authService.getCurrentUser()?.userType, to)) {
+        next(roleRedirect(authService.getCurrentUser()?.userType, to));
     }
     // If user is authenticated and trying to access sign-in page
     else if (to.name === 'sign-in' && isAuthenticated) {

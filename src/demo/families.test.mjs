@@ -32,7 +32,7 @@ test('GET /users/:id follows the real UserResource with live counters', async ()
   assert.equal(u.ownerProfile.currentEquipmentCount, (await get('/equipments')).length);
   assert.ok(u.ownerProfile.activeServiceRequests > 0); assert.equal(u.providerProfile, null);
   assert.equal((await get('/users/2')).providerProfile.companyName, 'TecnoFrio S.A.C.');
-  assert.equal((await get('/users')).length, 4); // 2 demo accounts + 2 db.json legacy users
+  assert.equal((await get('/users')).length, 8); // 6 demo accounts + 2 db.json legacy users
   await fails(call('get', '/users/99'), 404);
 });
 
@@ -194,7 +194,7 @@ test('technicians: seed, create/validate, update, delete with active-work guard'
   const list = await get('/technicians');
   assert.equal(list.length, 4);
   assert.ok(list.every(t => t.name && t.specialization && /^9\d{8}$/.test(t.phone) && t.companyId === 3 && typeof t.averageRating === 'number'));
-  assert.deepEqual([...new Set(list.map(t => t.availability))].sort(), ['Available', 'Occupied', 'On Leave']);
+  assert.deepEqual([...new Set(list.map(t => t.availability))].sort(), ['Available', 'Occupied']);
   assert.equal((await get('/technicians/2')).id, 2);
   await fails(call('get', '/technicians/99'), 404);
   await fails(call('post', '/technicians', { name: '', email: 'a@b.pe' }), 400);

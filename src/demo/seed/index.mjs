@@ -3,7 +3,7 @@ import { equipment } from './equipment.mjs';
 import { rentalEquipment, rentalPricing } from './rental.mjs';
 import { buildOperations } from './operations.mjs';
 
-export const STATE_VERSION = 2;
+export const STATE_VERSION = 3 // v3: work orders carry checklists + technicianInventory collection;
 
 /**
  * Every collection of server/db.json is present. temperatureReadings / energyReadings / dailyTemperatureAverages are
